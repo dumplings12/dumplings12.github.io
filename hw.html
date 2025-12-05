@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+ <head>
+ <meta charset="utf-8" />
+ <meta name="viewport" content="width=device-width, initial-scale=1" />
+ <title>XO 井字棋 — 雙人對戰</title>
+ <link rel="stylesheet" href="styles.css">
+ </head>
+ <body>
+<main class="container">
+<h1>XO 井字棋</h1>
+<div class="status">
+<span>目前輪到：<strong id="turn">X</strong></span>
+<span id="state"></span>
+</div>
+<section id="board" class="board" aria-label="井字棋棋盤">
+ <!-- 棋盤容器 (9 格) -->
+</section>
+ <div class="controls">
+ <button id="reset">重開一局</button>
+ </div>
+</main>
+ <script src="script.js" defer></script>
+ </body>
+</html>
+<!-- 棋盤容器 (9 格) -->
+ <section id="board" class="board" aria-label="井字棋棋盤">
+ <button class="cell" data-idx="0" ></button>
+ <button class="cell" data-idx="1" ></button>
+ <button class="cell" data-idx="2" ></button>
+ <button class="cell" data-idx="3" ></button>
+ <button class="cell" data-idx="4" ></button>
+ <button class="cell" data-idx="5" ></button>
+ <button class="cell" data-idx="6" ></button>
+ <button class="cell" data-idx="7" ></button>
+ <button class="cell" data-idx="8" ></button>
+ </section>
+ <section>下加個Reset按鈕
+ <section id="board" class="board" aria-label="井字棋棋盤">
+ </section>
+ <div class="controls">
+ <button id="reset">重開一局</button>
+ </div>
+styles.css
+ /* 先設定版面底圖 */
+ :root{
+--bg: #0f1226;
+--text: #e7e8ee;
+--x: #ff6b6b;
+--o: #4dd0e1;
+--win: #ffe066;
+}
+*{box-sizing:border-box}
+html,body{height:100%;}
+body{
+ margin:0; font-family: 'Noto Sans TC', system-ui, -apple-system, sans-serif;
+ background:var(--bg); color:var(--text); display:grid; place-items:center; padding:24px;
+}
+/* 再設計main的部分與h1 */
+ .container{ width: min(720px, 96%); text-align:center; }
+h1{ margin:0 0 16px 0; font-size:24px; }
+.status{ margin-bottom:12px; }
+ /* 設計棋盤<section id="board" class="board" aria-label="井字棋棋盤"> */
+ .board{
+display:grid; grid-template-columns: repeat(3, 1fr); gap:12px;
+background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+padding:12px; border-radius:14px; width:min(560px, 92%); aspect-ratio:1/1;
+}
+/* 設計棋盤格<button class="cell" data-idx="0" > */
+ .cell{
+border-radius:10px; background:linear-gradient(180deg,#121430,#0e1030); border:1px solid rgba(255,255,255,0.03);
+font-size:48px; font-weight:800display:grid; place-items:center;
+cursor:pointer; user-select:none; -webkit-tap-highlight-color:transparent;
+}
+.cell.x{ color:var(--x); }
+.cell.o{ color:var(--o); }
+.cell.win{ background:var(--win); color:#000; }
+ /* 設計Reset鍵處<div class="controls">與button */
+ .controls{ margin-top:12px; }
+button{ padding:8px 12px; border-radius:10px; border:0; background:#21264a; color:var(--text);
+cursor:pointer; }
+button:disabled{ opacity:.5; cursor:not-allowed; }
+## script.js
+ // 初始變數
+ const boardE1 = document.getElementById('board');
+const cells = Array.from(document.querySelectorAll('.cell');
+const btnReset = document.getElementById('reset');
+const turnEl = document.getElementById('turn');
+const stateEl = document.getElementById('state');
+ let board, current, active;
+ //三格成直線狀態
+ const WIN_LINES = [
+[0,1,2],[3,4,5],[6,7,8], // rows
+[0,3,6],[1,4,7],[2,5,8], // cols
+[0,4,8],[2,4,6] // diags
+];
+// 起始函式
+ function init(){
+board = Array(9).fill('');
+current = 'X';
+active = true;
+cells.forEach(c=>{
+c.textContent = '';
+c.className = 'cell';
+c.disabled = false;
+});
+turnEl.textContent = current;
+stateEl.textContent = '';
+}
+// 下手
+ function place(idx){
+if(!active || board[idx]) return;
+board[idx] = current;
+const cell = cells[idx];
+cell.textContent = current;
+cell.classList.add(current.toLowerCase());
+const result = evaluate();
+if(result.finished){
+endGame(result);
+}else{
+switchTurn();
+}
+}
+// 換手函式
+ function switchTurn(){
+current = current==='X' ? 'O' : 'X';
+turnEl.textContent = current;
+}
+// 下手後計算是否成一線結束遊戲的函式
+ function evaluate(){
+for(const line of WIN_LINES){
+const [a,b,c] = line;
+if(board[a] && board[a]===board[b] && board[a]===board[c]){
+return { finished:true, winner:board[a], line };
+}
+}
+if(board.every(v=>v)) return { finished:true, winner:null };
+return { finished:false };
+}
+// 確認是否結束遊戲
+ function endGame({winner, line}){
+active = false;
+if(winner){
+stateEl.textContent = '${winner} 勝利！';
+line.forEach(i=> cells[i].classList.add('win'));
+}else{
+stateEl.textContent = '平手';
+}
+cells.forEach(c=> c.disabled = true);
+}
+//
+ cells.forEach(cell=>{
+ cell.addEventListener('click', ()=>{
+ const idx = +cell.getAttribute('data-idx');
+ place(idx);
+ });
+});
+btnReset.addEventListener('click', init);
+//
+init();
+再加上計分板功能
+ HTML部分，加在控制按鈕前
+ <!-- 計分板 -->
+<div class="scoreboard">
+<h2>計分板</h2>
+<p>X 勝場：<span id="score-x">0</span></p>
+<p>O 勝場：<span id="score-o">0</span></p>
+<p>平手次數：<span id="score-draw">0</span></p>
+</div>
+<!-- 控制按鈕 -->
+<div class="controls">
+<button id="reset">重開一局</button>
+<button id="reset-all">重置計分</button>
+</div>
+## styles.css-在.controls前加入.scoreboard
+ .scoreboard{ margin-top:16px; text-align:left; display:inline-block; }
+.scoreboard h2{ margin-bottom:8px; font-size:18px; }
+ .controls{ margin-top:12px; }
+ button{ padding:8px 12px; border-radius:10px; border:0;
+background:#21264a; color:var(--text); cursor:pointer; }
+ button:disabled{ opacity:.5; cursor:not-allowed; }
+## script.js 增加記分板
+ // 計分板元素
+ const scoreXEl = document.getElementById('score-x');
+const scoreOEl = document.getElementById('score-o');
+const scoreDrawEl = document.getElementById('score-draw');
+ // 勝利條件（8 種線條組合）
+const WIN_LINES = [
+[0,1,2],[3,4,5],[6,7,8], // 橫排
+[0,3,6],[1,4,7],[2,5,8], // 直排
+[0,4,8],[2,4,6] // 斜線
+];
+// 遊戲狀態變數
+ let board; // 儲存 9 格的內容（'X', 'O', ''）
+let current; // 目前輪到誰下棋
+let active; // 遊戲是否進行中
+ // 計分用變數
+ let scoreX = 0;
+let scoreO = 0;
+let scoreDraw = 0;
+/**
+* 遊戲結束，處理勝利或平手
+* @param {object} param0 - {winner, line}
+*/
+ function endGame({winner, line}){
+active = false;
+if(winner){
+stateEl.textContent = '${winner} 勝利！';
+line.forEach(i=> cells[i].classList.add('win'));
+if(winner==='X') scoreX++; else scoreO++;
+}else{
+stateEl.textContent = '平手';
+scoreDraw++;
+}
+updateScoreboard();
+cells.forEach(c=> c.disabled = true);
+}
+/**
+ * 更新計分板數字
+ */
+ function updateScoreboard(){
+scoreXEl.textContent = scoreX;
+scoreOEl.textContent = scoreO;
+scoreDrawEl.textContent = scoreDraw;
+}
+// 綁定事件：重開遊戲（保留分數）
+ btnReset.addEventListener('click', init);
+ // 綁定事件：重置計分（連同遊戲）
+ btnResetAll.addEventListener('click', ()=>{
+scoreX = scoreO = scoreDraw = 0;
+updateScoreboard();
+init();
+});
