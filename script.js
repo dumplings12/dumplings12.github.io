@@ -1,117 +1,108 @@
-// 初始變數 (包含計分板相關元素)
-const boardE1 = document.getElementById('board');
-const cells = Array.from(document.querySelectorAll('.cell')); // 修正：加上了右括號
-const btnReset = document.getElementById('reset');
-const btnResetAll = document.getElementById('reset-all'); // 新增：重置計分按鈕
-const turnEl = document.getElementById('turn');
-const stateEl = document.getElementById('state');
-const scoreXEl = document.getElementById('score-x');
-const scoreOEl = document.getElementById('score-o');
-const scoreDrawEl = document.getElementById('score-draw');
-
-// 三格成直線狀態/勝利條件
-const WIN_LINES = [
-    [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
-    [0, 3, 6], [1, 4, 7], [2, 5, 8], // cols
-    [0, 4, 8], [2, 4, 6] // diags
-];
-
-// 遊戲狀態變數
-let board;
-let current;
-let active;
-
-// 計分用變數
-let scoreX = 0;
-let scoreO = 0;
-let scoreDraw = 0;
-
-// 起始函式
-function init() {
-    board = Array(9).fill('');
-    current = 'X';
-    active = true;
-    cells.forEach(c => {
-        c.textContent = '';
-        c.className = 'cell';
-        c.disabled = false;
-    });
-    turnEl.textContent = current;
-    stateEl.textContent = '';
+/ 遊戲主變數
+ let board = Array(9).fill(null); // 棋盤狀態
+ let current = 'X'; // 當前玩家（玩家為X）
+ let active = true; // 控制遊戲是否進行中
+ // 初始化棋盤
+ function init() {
+ const boardEl = document.getElementById('board');
+ boardEl.innerHTML = '';
+ board = Array(9).fill(null);
+ active = true;
+ current = 'X';
+ document.getElementById('status').innerText = '玩家 (X) 先手';
+ // 建立9個格子
+for (let i = 0; i < 9; i++) {
+ const cell = document.createElement('div');
+ cell.classList.add('cell');
+ cell.onclick = () => playerMove(i);
+ boardEl.appendChild(cell);
+ }
 }
-
-// 更新計分板數字
-function updateScoreboard() {
-    scoreXEl.textContent = scoreX;
-    scoreOEl.textContent = scoreO;
-    scoreDrawEl.textContent = scoreDraw;
+// 玩家下棋
+ function playerMove(i) {
+ if (!active || board[i]) return;
+ board[i] = 'X';
+ updateBoard();
+ if (checkWin('X')) {
+ endGame('玩家 (X) 勝利！');
+ return;
+ } else if (isFull()) {
+ endGame('平手！');
+ return;
+ }
+ current = 'O';
+ document.getElementById('status').innerText = '電腦思考中...';
+ setTimeout(computerMove, 700); // 模擬電腦思考時間
 }
+// 電腦AI下棋邏輯
+ function computerMove() {
+ // 1. 嘗試自己獲勝
+ let move = findWinningMove('O');
+ // 2. 嘗試阻止玩家獲勝
+ if (move === null) move = findWinningMove('X');
+ // 3. 否則隨機下在空格
+ if (move === null) move = getRandomMove();
+ board[move] = 'O';
+ updateBoard();
+ if (checkWin('O')) {
+ endGame('電腦 (O) 勝利！');
+ return;
+ } else if (isFull()) {
+ endGame('平手！');
+ return;
+ }
+ current = 'X';
+ document.getElementById('status').innerText = '輪到玩家 (X)';
+ }
+ // 找到可立即獲勝的位置
+ function findWinningMove(player) {
+ const wins = [
+ [0,1,2],[3,4,5],[6,7,8],
+ [0,3,6],[1,4,7],[2,5,8],
+ [0,4,8],[2,4,6]
+ ];
+ for (let [a,b,c] of wins) {
+ const line = [board[a], board[b], board[c]];
+ if (line.filter(v => v === player).length === 2 && line.includes(null)) {
+ return [a,b,c][line.indexOf(null)];
+ }
 
-// 下手
-function place(idx) {
-    if (!active || board[idx]) return;
-    board[idx] = current;
-    const cell = cells[idx];
-    cell.textContent = current;
-    cell.classList.add(current.toLowerCase());
-    const result = evaluate();
-    if (result.finished) {
-        endGame(result);
-    } else {
-        switchTurn();
-    }
+ return null;
 }
-
-// 換手函式
-function switchTurn() {
-    current = current === 'X' ? 'O' : 'X';
-    turnEl.textContent = current;
-}
-
-// 下手後計算是否成一線結束遊戲的函式
-function evaluate() {
-    for (const line of WIN_LINES) {
-        const [a, b, c] = line;
-        if (board[a] && board[a] === board[b] && board[a] === board[c]) {
-            return { finished: true, winner: board[a], line };
-        }
-    }
-    if (board.every(v => v)) return { finished: true, winner: null };
-    return { finished: false };
-}
-
-// 確認是否結束遊戲 (已整合計分邏輯)
-function endGame({ winner, line }) {
-    active = false;
-    if (winner) {
-        stateEl.textContent = `${winner} 勝利！`; // 修正：使用倒引號
-        line.forEach(i => cells[i].classList.add('win'));
-        if (winner === 'X') scoreX++; else scoreO++;
-    } else {
-        stateEl.textContent = '平手';
-        scoreDraw++;
-    }
-    updateScoreboard(); // 更新計分板
-    cells.forEach(c => c.disabled = true);
-}
-
-// 綁定事件：棋盤格點擊
-cells.forEach(cell => {
-    cell.addEventListener('click', () => {
-        const idx = +cell.getAttribute('data-idx');
-        place(idx);
-    });
-});
-
-// 綁定事件：重開遊戲（保留分數）
-btnReset.addEventListener('click', init);
-
-// 綁定事件：重置計分（連同遊戲）
-btnResetAll.addEventListener('click', () => {
-    scoreX = scoreO = scoreDraw = 0;
-    updateScoreboard();
-    init();
-});
-
-// 初始化遊戲
-init();
+// 隨機選擇空格
+ function getRandomMove() {
+ const empty = board.map((v, i) => v ? null : i).filter(v => v !== null);
+ return empty[Math.floor(Math.random() * empty.length)];
+ }
+ // 更新畫面
+ function updateBoard() {
+ const cells = document.getElementsByClassName('cell');
+ for (let i = 0; i < 9; i++) {
+ cells[i].innerText = board[i] || '';
+ }
+ }
+ // 判斷勝利
+ function checkWin(player) {
+ const wins = [
+ [0,1,2],[3,4,5],[6,7,8],
+ [0,3,6],[1,4,7],[2,5,8],
+ [0,4,8],[2,4,6]
+ ];
+ return wins.some(([a,b,c]) => board[a] === player && board[b] === player
+&& board[c] === player);
+ }
+// 判斷是否平手
+ function isFull() {
+ return board.every(cell => cell !== null);
+ }
+ // 結束遊戲
+ function endGame(message) {
+ document.getElementById('status').innerText = message;
+ active = false;
+ }
+// 重開一局
+ function resetGame() {
+ init();
+ }
+ // 初始化
+ init();
