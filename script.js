@@ -55,19 +55,19 @@ for (let i = 0; i < 9; i++) {
  document.getElementById('status').innerText = '輪到玩家 (X)';
  }
  // 找到可立即獲勝的位置
- function findWinningMove(player) {
- const wins = [
- [0,1,2],[3,4,5],[6,7,8],
- [0,3,6],[1,4,7],[2,5,8],
- [0,4,8],[2,4,6]
- ];
- for (let [a,b,c] of wins) {
- const line = [board[a], board[b], board[c]];
- if (line.filter(v => v === player).length === 2 && line.includes(null)) {
- return [a,b,c][line.indexOf(null)];
- }
-
- return null;
+  function findWinningMove(player) {
+    const wins = [
+        [0,1,2],[3,4,5],[6,7,8],
+        [0,3,6],[1,4,7],[2,5,8],
+        [0,4,8],[2,4,6]
+    ];
+    for (let [a,b,c] of wins) {
+        const line = [board[a], board[b], board[c]];
+        if (line.filter(v => v === player).length === 2 && line.includes(null)) {
+            return [a,b,c][line.indexOf(null)]; 
+        }
+    }
+    return null; 
 }
 // 隨機選擇空格
  function getRandomMove() {
@@ -106,3 +106,4 @@ for (let i = 0; i < 9; i++) {
  }
  // 初始化
  init();
+
