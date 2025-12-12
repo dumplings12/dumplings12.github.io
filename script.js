@@ -1,7 +1,7 @@
 // 遊戲主變數
 let board = Array(9).fill(null); // 棋盤狀態
 let current = 'X'; // 當前玩家（玩家為X）
-let active = true; // 控制遊戲是否進行中
+let active = true; // 控制遊戲是否進行中 (同時控制玩家是否可以點擊)
 
 // 初始化棋盤
 function init() {
@@ -23,7 +23,9 @@ function init() {
 
 // 玩家下棋
 function playerMove(i) {
-    if (!active || board[i]) return;
+    // 檢查: 如果遊戲未開始(active=false)或格子已被佔據，則退出
+    if (!active || board[i]) return; 
+
     board[i] = 'X';
     updateBoard();
     
@@ -35,17 +37,21 @@ function playerMove(i) {
         return;
     }
     
+    // *** 修正連點漏洞的核心 ***
+    // 鎖定棋盤：防止玩家在電腦思考時連點
+    active = false; 
+    
     current = 'O';
     document.getElementById('status').innerText = '電腦思考中...';
-    setTimeout(computerMove, 700); // 模擬電腦思考時間
+    
+    // 延遲呼叫電腦AI
+    setTimeout(computerMove, 700); 
 }
 
 // --- 電腦AI下棋邏輯 (Minimax 演算法) ---
 function computerMove() {
-    // 使用 Minimax 找到最佳移動
     let bestMove = findBestMove(board, 'O');
     
-    // 執行最佳移動
     board[bestMove.index] = 'O';
     updateBoard();
 
@@ -56,6 +62,10 @@ function computerMove() {
         endGame('平手！');
         return;
     }
+    
+    // *** 修正連點漏洞的核心 ***
+    // 解除鎖定：交回控制權給玩家
+    active = true;
     
     current = 'X';
     document.getElementById('status').innerText = '輪到玩家 (X)';
@@ -68,23 +78,18 @@ function findBestMove(currentBoard, player) {
     let bestMove = {};
 
     for (let i of emptySpots) {
-        // 1. 執行移動
         currentBoard[i] = player; 
         
-        // 2. 遞迴呼叫 minimax，計算這一移動的得分
         let score = minimax(currentBoard, player === 'O' ? 'X' : 'O').score;
         
-        // 3. 撤銷移動 (還原棋盤)
         currentBoard[i] = null; 
 
         if (player === 'O') {
-            // 對於 O (Maximize Player)，我們找最高分
             if (score > bestScore) {
                 bestScore = score;
                 bestMove.index = i;
             }
         } else {
-            // 對於 X (Minimize Player)，我們找最低分
             if (score < bestScore) {
                 bestScore = score;
                 bestMove.index = i;
@@ -109,9 +114,9 @@ function minimax(newBoard, player) {
     if (player === 'O') {
         let bestScore = -Infinity;
         for (let i of emptySpots) {
-            newBoard[i] = player; // 執行移動
-            let score = minimax(newBoard, 'X').score; // 遞迴呼叫 (換手)
-            newBoard[i] = null; // 撤銷移動
+            newBoard[i] = player; 
+            let score = minimax(newBoard, 'X').score; 
+            newBoard[i] = null; 
             
             bestScore = Math.max(bestScore, score);
         }
@@ -121,9 +126,9 @@ function minimax(newBoard, player) {
     else {
         let bestScore = Infinity;
         for (let i of emptySpots) {
-            newBoard[i] = player; // 執行移動
-            let score = minimax(newBoard, 'O').score; // 遞迴呼叫 (換手)
-            newBoard[i] = null; // 撤銷移動
+            newBoard[i] = player; 
+            let score = minimax(newBoard, 'O').score; 
+            newBoard[i] = null; 
             
             bestScore = Math.min(bestScore, score);
         }
@@ -133,19 +138,15 @@ function minimax(newBoard, player) {
 
 // 檢查遊戲是否結束，並返回分數
 function checkGameStatus(currentBoard) {
-    // 檢查 'O' 是否獲勝 (O是電腦，Maximizr)
     if (checkWinForBoard(currentBoard, 'O')) {
-        return { score: 10 }; // 電腦獲勝給予高分
+        return { score: 10 }; 
     }
-    // 檢查 'X' 是否獲勝 (X是玩家，Minimizer)
     else if (checkWinForBoard(currentBoard, 'X')) {
-        return { score: -10 }; // 玩家獲勝給予低分
+        return { score: -10 }; 
     }
-    // 檢查平手
     else if (currentBoard.every(cell => cell !== null)) {
-        return { score: 0 }; // 平手
+        return { score: 0 }; 
     }
-    // 遊戲尚未結束
     return null;
 }
 
@@ -173,7 +174,32 @@ function isFull() {
 // 結束遊戲
 function endGame(message) {
     document.getElementById('status').innerText = message;
+    // 遊戲結束時，active 仍然是 false，確保無法再點擊
     active = false;
+    
+    // 增加勝利線的視覺效果 (可選，但讓遊戲更完整)
+    if (message.includes('勝利')) {
+        highlightWinLine(message.includes('(X)') ? 'X' : 'O');
+    }
+}
+
+// 突顯勝利線 (需搭配新CSS的 .cell.win 樣式)
+function highlightWinLine(player) {
+    const wins = [
+        [0,1,2],[3,4,5],[6,7,8],
+        [0,3,6],[1,4,7],[2,5,8],
+        [0,4,8],[2,4,6]
+    ];
+    const cells = document.getElementsByClassName('cell');
+    
+    for (let [a,b,c] of wins) {
+        if (board[a] === player && board[b] === player && board[c] === player) {
+            cells[a].classList.add('win');
+            cells[b].classList.add('win');
+            cells[c].classList.add('win');
+            break;
+        }
+    }
 }
 
 // 重開一局
@@ -186,6 +212,11 @@ function updateBoard() {
     const cells = document.getElementsByClassName('cell');
     for (let i = 0; i < 9; i++) {
         cells[i].innerText = board[i] || '';
+        // 確保移除勝利樣式，只保留 X 或 O 類別 (搭配新CSS)
+        cells[i].classList.remove('x', 'o', 'win'); 
+        if (board[i]) {
+            cells[i].classList.add(board[i].toLowerCase());
+        }
     }
 }
 
