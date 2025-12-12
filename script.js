@@ -1,4 +1,4 @@
-/ 遊戲主變數
+// 遊戲主變數
  let board = Array(9).fill(null); // 棋盤狀態
  let current = 'X'; // 當前玩家（玩家為X）
  let active = true; // 控制遊戲是否進行中
@@ -106,3 +106,4 @@ for (let i = 0; i < 9; i++) {
  }
  // 初始化
  init();
+
