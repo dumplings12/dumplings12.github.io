@@ -1,10 +1,14 @@
 :root {
     --board-size: 480px;
+    /* 木質色調定義 */
+    --wood-dark: #3e2723;   /* 深咖啡木 */
+    --wood-light: #5d4037;  /* 淺咖啡木 */
+    --frame-color: #2b1a13; /* 外框色 */
 }
 * { box-sizing: border-box; }
 body {
     font-family: sans-serif;
-    background: #e5e7eb;
+    background: #d7ccc8; /* 淺褐色背景 */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -12,42 +16,56 @@ body {
     margin: 0;
 }
 .container { width: calc(var(--board-size) + 40px); }
-h1 { text-align: center; color: #111827; margin: 10px 0; }
+h1 { text-align: center; color: #3e2723; margin: 10px 0; }
 
-.controls { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: bold; }
-
-.board-wrap {
-    background: #1a4d2e;
-    padding: 12px;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+.controls { 
+    display: flex; 
+    justify-content: space-between; 
+    margin-bottom: 15px; 
+    font-weight: bold;
+    color: #3e2723;
 }
 
+/* 棋盤外框 */
+.board-wrap {
+    background: var(--frame-color);
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.4), inset 0 2px 5px rgba(255,255,255,0.1);
+}
+
+/* 棋盤本體 */
 .board {
     width: var(--board-size);
     height: var(--board-size);
     display: grid;
-    /* 強制 8x8 均分，避免被內容撐開 */
     grid-template-columns: repeat(8, 1fr);
-    grid-template-rows: repeat(8, 1fr); 
-    gap: 4px;
-    background: #064e3b;
+    grid-template-rows: repeat(8, 1fr);
+    gap: 1px; /* 極細格線，展現木塊拼接感 */
+    background: #1a0f0a; /* 格線顏色 */
+    border: 2px solid #1a0f0a;
 }
 
+/* 棋格 */
 .cell {
-    background: #166534;
+    background: var(--wood-light);
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
     perspective: 1000px;
-    overflow: hidden; /* 確保內容不溢出影響佈局 */
+    overflow: hidden;
+}
+
+/* 讓棋盤有交錯的木紋感 (可選) */
+.cell:nth-child(even) {
+    background: #543b32;
 }
 
 /* 3D 棋子 */
 .piece {
-    width: 80%;
-    height: 80%;
+    width: 82%;
+    height: 82%;
     position: relative;
     transform-style: preserve-3d;
     transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
@@ -59,31 +77,34 @@ h1 { text-align: center; color: #111827; margin: 10px 0; }
     height: 100%;
     border-radius: 50%;
     backface-visibility: hidden;
-    box-shadow: inset -2px -4px 6px rgba(0,0,0,0.5), 0 4px 8px rgba(0,0,0,0.4);
+    /* 增加環境光陰影讓棋子在木頭上更寫實 */
+    box-shadow: inset -2px -4px 8px rgba(0,0,0,0.6), 0 6px 12px rgba(0,0,0,0.5);
 }
 
 .piece .black-side { background: radial-gradient(circle at 30% 30%, #444, #000); }
 .piece .white-side { 
-    background: radial-gradient(circle at 30% 30%, #fff, #ddd); 
+    background: radial-gradient(circle at 30% 30%, #ffffff, #dcdcdc); 
     transform: rotateY(180deg); 
 }
 
 .piece.is-white { transform: rotateY(180deg); }
-.piece.is-black { transform: rotateY(0deg); }
 
-/* 提示數字：絕對定位，不影響排版 */
+/* 提示數字 */
 .hint {
     position: absolute;
     bottom: 2px;
     right: 4px;
     font-size: 11px;
     font-weight: bold;
-    color: rgba(255,255,255,0.5);
+    color: rgba(255,255,255,0.4);
     pointer-events: none;
     z-index: 10;
 }
 
-.cell.possible { background: rgba(255, 255, 255, 0.1); cursor: pointer; }
-.cell.possible:hover { background: rgba(255, 255, 255, 0.2); }
+.cell.possible { 
+    background: rgba(255, 215, 0, 0.1); /* 淡淡的金黃色提示，跟木頭很搭 */
+    cursor: pointer; 
+}
+.cell.possible:hover { background: rgba(255, 215, 0, 0.2); }
 
 @media (max-width: 520px) { :root { --board-size: 90vw; } }
