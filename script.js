@@ -6,7 +6,6 @@ let isAnimating = false;
 const boardEl = document.getElementById('board');
 const difficultyEl = document.getElementById('difficulty');
 
-// 初始化
 function initBoard() {
     board = Array.from({length:SIZE}, () => Array(SIZE).fill(0));
     const m = SIZE/2;
@@ -48,13 +47,12 @@ async function handleMove(r, c, flips) {
     if(isAnimating) return;
     isAnimating = true;
     
-    // 1. 下子
     board[r][c] = current;
     render(); 
 
-    // 2. 依序翻轉（每顆間隔 100ms）
+    // 依序翻轉
     for (const [fr, fc] of flips) {
-        await new Promise(res => setTimeout(res, 100)); 
+        await new Promise(res => setTimeout(res, 120)); // 稍微加慢一點點更有質感
         board[fr][fc] = current;
         const piece = boardEl.children[fr * SIZE + fc].querySelector('.piece');
         if(piece) {
@@ -62,7 +60,7 @@ async function handleMove(r, c, flips) {
         }
     }
 
-    await new Promise(res => setTimeout(res, 600)); // 等待最後一顆翻完
+    await new Promise(res => setTimeout(res, 600));
     
     current = current === 1 ? 2 : 1;
     isAnimating = false;
@@ -137,7 +135,7 @@ function checkPass() {
         if(getLegalMoves(other).size === 0) {
             alert("遊戲結束！");
         } else {
-            alert("無子可下，跳過回合");
+            alert(`${current===1?'黑':'白'}方無子可下，跳過回合`);
             current = other; render();
             if(current === 2) aiPlay();
         }
