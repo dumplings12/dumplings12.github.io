@@ -1,256 +1,146 @@
-// 遊戲主變數
-let board = Array(9).fill(null); // 棋盤狀態
-let current = 'X'; // 當前玩家（玩家為X）
-
-// --- 事件處理輔助函式 ---
-// 處理點擊事件的入口
-function handleCellClick(event) {
-    // 從 DOM 元素中獲取 index
-    const i = parseInt(event.target.dataset.index);
-    playerMove(i);
+// Othello (Reversi) 基本互動邏輯
+// 8x8 棋盤，0=空, 1=黑, 2=白
+const SIZE = 8;
+let board = [];
+let current = 1; // 1=黑先
+const boardEl = document.getElementById('board’);
+const currentPlayerEl = document.getElementById('currentPlayer’);
+const blackScoreEl = document.getElementById('blackScore’);
+const whiteScoreEl = document.getElementById('whiteScore’);
+const restartBtn = document.getElementById('restartBtn');
+// 方向向量（8方向）
+const DIRS = [
+ [-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]
+];
+function initBoard(){
+ board = Array.from({length:SIZE}, () => Array(SIZE).fill(0));
+ // 初始四顆棋子
+ const m = SIZE/2;
+ board[m-1][m-1] = 2; // 白
+ board[m][m] = 2;
+ board[m-1][m] = 1; // 黑
+ board[m][m-1] = 1;
+ current = 1; // 黑先
+ render();
 }
-
-// 綁定點擊事件 (解鎖)
-function bindClickEvents() {
-    const cells = document.getElementsByClassName('cell');
-    for (let cell of cells) {
-        // 使用 addEventListener 處理事件
-        cell.addEventListener('click', handleCellClick);
-    }
+function within(r,c){
+ return r>=0 && r<SIZE && c>=0 && c<SIZE;
 }
-
-// 解綁定所有點擊事件 (鎖定)
-function unbindClickEvents() {
-    const cells = document.getElementsByClassName('cell');
-    for (let cell of cells) {
-        // 移除事件處理器
-        cell.removeEventListener('click', handleCellClick);
-    }
+// 檢查某個位置是否為 legal move，回傳要翻轉的格子列表（若無則回空陣列）
+function flipsForMove(r,c,player){
+ if(board[r][c] !== 0) return [];
+ const opponent = player===1?2:1;
+ let toFlip = [];
+ for(const [dr,dc] of DIRS){
+ let rr = r+dr, cc = c+dc;
+ const line = [];
+ while(within(rr,cc) && board[rr][cc] === opponent){
+ line.push([rr,cc]);
+ rr += dr; cc += dc;
+ }
+ if(line.length>0 && within(rr,cc) && board[rr][cc] === player){
+ toFlip = toFlip.concat(line);
+ }
+ }
+ return toFlip;
 }
-
-// --- 遊戲流程函式 ---
-
-// 初始化棋盤
-function init() {
-    const boardEl = document.getElementById('board');
-    boardEl.innerHTML = '';
-    board = Array(9).fill(null);
-    current = 'X';
-    document.getElementById('status').innerText = '玩家 (X) 先手';
-    
-    // 建立9個格子，並儲存 data-index
-    for (let i = 0; i < 9; i++) {
-        const cell = document.createElement('div');
-        cell.classList.add('cell');
-        cell.dataset.index = i; // 儲存 index
-        boardEl.appendChild(cell);
-    }
-    // 初始化時綁定點擊事件
-    bindClickEvents(); 
+// 取得所有 legal moves，回傳 map keyed by 'r,c' -> flips array
+function getLegalMoves(player){
+ const moves = new Map();
+ for(let r=0;r<SIZE;r++){
+ for(let c=0;c<SIZE;c++){
+ const flips = flipsForMove(r,c,player);
+ if(flips.length>0) moves.set(`${r},${c}`, flips);
+ }
+ }
+ return moves;
 }
-
-// 玩家下棋 (核心邏輯)
-function playerMove(i) {
-    // 檢查: 格子已被佔據，則退出
-    if (board[i]) return; 
-
-    board[i] = 'X';
-    updateBoard();
-    
-    if (checkWin('X')) {
-        endGame('玩家 (X) 勝利！');
-        return;
-    } else if (isFull()) {
-        endGame('平手！');
-        return;
-    }
-    
-    // *** 修正點：鎖定棋盤 (移除事件處理器) ***
-    unbindClickEvents(); 
-    
-    current = 'O';
-    document.getElementById('status').innerText = '電腦思考中...';
-    
-    // 延遲呼叫電腦AI
-    setTimeout(computerMove, 700); 
+// 下子並翻轉
+function placeMove(r,c,player,flips){
+ board[r][c] = player;
+ for(const [rr,cc] of flips){ board[rr][cc]=player; }
 }
-
-// 電腦AI下棋邏輯 (Minimax 演算法)
-function computerMove() {
-    let bestMove = findBestMove(board, 'O');
-    
-    // 安全檢查：如果 Minimax 發現沒有空位，則直接結束
-    if (bestMove.index === undefined) {
-        isFull() && endGame('平手！');
-        return;
-    }
-
-    board[bestMove.index] = 'O';
-    updateBoard();
-
-    if (checkWin('O')) {
-        endGame('電腦 (O) 勝利！');
-        return;
-    } else if (isFull()) {
-        endGame('平手！');
-        return;
-    }
-    
-    // *** 修正點：解鎖棋盤 (重新綁定事件處理器) ***
-    bindClickEvents();
-    
-    current = 'X';
-    document.getElementById('status').innerText = '輪到玩家 (X)';
+// 計算分數
+function computeScore(){
+ let b=0,w=0;
+ for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
+ if(board[r][c]===1) b++;
+ if(board[r][c]===2) w++;
+ }
+ return {b,w};
 }
-
-// 結束遊戲
-function endGame(message) {
-    document.getElementById('status').innerText = message;
-    // 確保遊戲結束時無法點擊
-    unbindClickEvents();
-    
-    if (message.includes('勝利')) {
-        highlightWinLine(message.includes('(X)') ? 'X' : 'O');
-    }
+function render(){
+ boardEl.innerHTML = ‘’;
+ const moves = getLegalMoves(current);
+ for(let r=0;r<SIZE;r++){
+ for(let c=0;c<SIZE;c++){
+ const cell = document.createElement('div’);
+ cell.classList.add('cell’);
+ cell.setAttribute('role','gridcell’);
+ cell.dataset.r = r; cell.dataset.c = c;
+ const val = board[r][c];
+ if(val===0){
+ cell.classList.add('empty’);
+ } else {
+ const piece = document.createElement('div’);
+ piece.classList.add('piece’);
+ piece.classList.add(val===1? 'black':'white’);
+ cell.appendChild(piece);
+ }
+// 如果為可能下子位置，標示並顯示可以翻轉的數量
+ const key = `${r},${c}`;
+ if(moves.has(key)){
+ cell.classList.add('possible','available’);
+ const flips = moves.get(key);
+ const hint = document.createElement('div’);
+ hint.className='hint’;
+ hint.textContent = flips.length;
+ cell.appendChild(hint);
+ cell.addEventListener('click', ()=> onCellClick(r,c,moves.get(key)));
+ } else {
+ cell.classList.add('disabled’);
+ }
+ boardEl.appendChild(cell);
+ }
+ }
+ // 更新 UI
+ const scores = computeScore();
+ blackScoreEl.textContent = scores.b;
+ whiteScoreEl.textContent = scores.w;
+ currentPlayerEl.textContent = current===1? '黑':'白’;
+ // check game end / pass logic
+ checkForEndOrPass();
 }
-
-// 重開一局
-function resetGame() {
-    init();
+function onCellClick(r,c,flips){
+ placeMove(r,c,current,flips);
+ // 換手
+ current = current===1?2:1;
+ render();
 }
-
-// 更新畫面
-function updateBoard() {
-    const cells = document.getElementsByClassName('cell');
-    for (let i = 0; i < 9; i++) {
-        cells[i].innerText = board[i] || '';
-        cells[i].classList.remove('x', 'o', 'win'); 
-        if (board[i]) {
-            cells[i].classList.add(board[i].toLowerCase());
-        }
-    }
+function checkForEndOrPass(){
+ const currMoves = getLegalMoves(current);
+ if(currMoves.size>0) return; // 有路可下
+ // 當前玩家無路可下，查看對手是否有路
+ const other = current===1?2:1;
+ const otherMoves = getLegalMoves(other);
+ if(otherMoves.size>0){
+ // pass 回合
+ // 顯示提示後交給對手
+ setTimeout(()=>{
+ alert((current===1? '黑':'白') + ' 無子可下，回合由對方繼續。’);
+ current = other;
+ render();
+ },10);
+ return;
+ }
+ // 兩邊都沒有路，遊戲結束
+ const scores = computeScore();
+ let msg = `遊戲結束。 黑 ${scores.b} : 白 ${scores.w}。 `;
+ if(scores.b>scores.w) msg += '黑方獲勝！’;
+ else if(scores.w>scores.b) msg += '白方獲勝！’;
+ else msg += '平手！’;
+ setTimeout(()=>alert(msg), 10);
 }
-
-// 突顯勝利線 (需搭配新CSS的 .cell.win 樣式)
-function highlightWinLine(player) {
-    const wins = [
-        [0,1,2],[3,4,5],[6,7,8],
-        [0,3,6],[1,4,7],[2,5,8],
-        [0,4,8],[2,4,6]
-    ];
-    const cells = document.getElementsByClassName('cell');
-    
-    for (let [a,b,c] of wins) {
-        if (board[a] === player && board[b] === player && board[c] === player) {
-            cells[a].classList.add('win');
-            cells[b].classList.add('win');
-            cells[c].classList.add('win');
-            break;
-        }
-    }
-}
-
-// --- Minimax 演算法輔助函式 ---
-
-// 判斷勝利 (檢查特定棋盤狀態，供 Minimax 使用)
-function checkWinForBoard(currentBoard, player) {
-    const wins = [
-        [0,1,2],[3,4,5],[6,7,8],
-        [0,3,6],[1,4,7],[2,5,8],
-        [0,4,8],[2,4,6]
-    ];
-    return wins.some(([a,b,c]) => currentBoard[a] === player && currentBoard[b] === player
-&& currentBoard[c] === player);
-}
-
-// 判斷勝利 (檢查當前全域 board 變數，供玩家移動後使用)
-function checkWin(player) {
-    return checkWinForBoard(board, player);
-}
-
-// 判斷是否平手
-function isFull() {
-    return board.every(cell => cell !== null);
-}
-
-// 檢查遊戲是否結束，並返回分數
-function checkGameStatus(currentBoard) {
-    if (checkWinForBoard(currentBoard, 'O')) {
-        return { score: 10 }; 
-    }
-    else if (checkWinForBoard(currentBoard, 'X')) {
-        return { score: -10 }; 
-    }
-    else if (currentBoard.every(cell => cell !== null)) {
-        return { score: 0 }; 
-    }
-    return null;
-}
-
-// 遞迴的 Minimax 演算法核心
-function minimax(newBoard, player) {
-    const gameStatus = checkGameStatus(newBoard);
-    
-    if (gameStatus) {
-        return gameStatus;
-    }
-
-    const emptySpots = newBoard.map((v, i) => v ? null : i).filter(v => v !== null);
-    
-    if (player === 'O') {
-        let bestScore = -Infinity;
-        for (let i of emptySpots) {
-            newBoard[i] = player; 
-            let score = minimax(newBoard, 'X').score; 
-            newBoard[i] = null; 
-            
-            bestScore = Math.max(bestScore, score);
-        }
-        return { score: bestScore };
-    } 
-    else {
-        let bestScore = Infinity;
-        for (let i of emptySpots) {
-            newBoard[i] = player; 
-            let score = minimax(newBoard, 'O').score; 
-            newBoard[i] = null; 
-            
-            bestScore = Math.min(bestScore, score);
-        }
-        return { score: bestScore };
-    }
-}
-
-// 找到最佳移動位置 (Minimax 的起點)
-function findBestMove(currentBoard, player) {
-    let emptySpots = currentBoard.map((v, i) => v ? null : i).filter(v => v !== null);
-    let bestScore = (player === 'O') ? -Infinity : Infinity;
-    let bestMove = {};
-
-    // 如果沒有空位，直接返回
-    if (emptySpots.length === 0) return {}; 
-
-    for (let i of emptySpots) {
-        currentBoard[i] = player; 
-        
-        let score = minimax(currentBoard, player === 'O' ? 'X' : 'O').score;
-        
-        currentBoard[i] = null; 
-
-        if (player === 'O') {
-            if (score > bestScore) {
-                bestScore = score;
-                bestMove.index = i;
-            }
-        } else {
-            if (score < bestScore) {
-                bestScore = score;
-                bestMove.index = i;
-            }
-        }
-    }
-    return bestMove;
-}
-
-// 初始化
-init();
+restartBtn.addEventListener('click', ()=>initBoard());
+ // 初始化
+ initBoard();
