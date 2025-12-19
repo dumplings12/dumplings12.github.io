@@ -1,33 +1,83 @@
-:root{
---board-size: 480px; /* 棋盤視覺大小 */
---cell-size: calc(var(--board-size) / 8);
+:root {
+    --board-size: 480px;
+    --cell-size: calc(var(--board-size) / 8);
 }
-*{box-sizing:border-box}
-body{font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-'Noto Sans TC', 'Microsoft JhengHei', sans-serif; background:#f2f6f9;
-color:#1f2937; display:flex; align-items:center; justify-content:center; minheight:100vh; margin:0}
-.container{width:calc(var(--board-size) + 40px);}
-h1{text-align:center;margin:0 0 12px}
-.controls{display:flex;align-items:center;justify-content:spacebetween;margin-bottom:10px}
- .controls .status, .controls .score{font-weight:600}
- #restartBtn{padding:6px 10px;border-radius:6px;border:1px solid
-#cbd5e1;background:#fff;cursor:pointer}
- .board-wrap{background:lineargradient(180deg,#e6f0ea,#dbeee0);padding:10px;border-radius:12px;boxshadow:0 6px 18px rgba(15,23,42,0.08)}
- .board{width:var(--board-size);height:var(--board-size);display:grid;gridtemplate-columns:repeat(8,1fr);grid-templaterows:repeat(8,1fr);gap:4px;padding:4px;background:#2b6b3f;borderradius:8px}
- .cell{position:relative;width:100%;height:100%;borderradius:6px;display:flex;align-items:center;justifycontent:center;cursor:pointer;user-select:none}
- .cell::after{content:"";position:absolute;inset:6px;border-radius:6px}
- .cell .piece{width:calc(var(--cell-size) * 0.78);height:calc(var(--cell-size) *
-0.78);border-radius:50%;box-shadow:0 3px 6px
-rgba(2,6,23,0.2);transform:scale(1);transition:transform .12s}
- .cell .hint{position:absolute;right:4px;bottom:4px;font-size:12px;fontweight:700;line-height:1;color:#0b3f1a}
- .cell.hint-available{outline:3px solid rgba(255,255,255,0.06)}
- .cell.available::after{background:lineargradient(180deg,rgba(255,255,255,0.08),rgba(0,0,0,0.06));}
- .cell.available .hint{display:block}
- .piece.black{background:#111;}
- .piece.white{background:#fff;border:1px solid rgba(0,0,0,0.06)}
- .cell.empty::after{background:transparent}
- .cell.possible{background:linear-gradient(180deg, rgba(45,157,85,0.15),
-rgba(45,157,85,0.08));}
- .cell.disabled{cursor:default;opacity:0.9}
- .legend{margin-top:10px;font-size:13px;color:#334155}
- @media (max-width:520px){:root{--board-size:360px}}
+* { box-sizing: border-box; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+    background: #f2f6f9;
+    color: #1f2937;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    margin: 0;
+}
+.container { width: calc(var(--board-size) + 40px); }
+h1 { text-align: center; margin: 0 0 12px; }
+.controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+.controls .status, .controls .score { font-weight: 600; }
+#restartBtn {
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    cursor: pointer;
+}
+.board-wrap {
+    background: linear-gradient(180deg, #e6f0ea, #dbeee0);
+    padding: 10px;
+    border-radius: 12px;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+}
+.board {
+    width: var(--board-size);
+    height: var(--board-size);
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    gap: 4px;
+    padding: 4px;
+    background: #2b6b3f;
+    border-radius: 8px;
+}
+.cell {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    user-select: none;
+}
+.cell::after { content: ""; position: absolute; inset: 2px; border-radius: 6px; }
+.cell .piece {
+    width: calc(var(--cell-size) * 0.78);
+    height: calc(var(--cell-size) * 0.78);
+    border-radius: 50%;
+    box-shadow: 0 3px 6px rgba(2,6,23,0.2);
+    z-index: 2;
+}
+.cell .hint {
+    position: absolute;
+    right: 4px;
+    bottom: 4px;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    color: #0b3f1a;
+    z-index: 3;
+}
+.piece.black { background: #111; }
+.piece.white { background: #fff; border: 1px solid rgba(0,0,0,0.06); }
+.cell.possible { background: rgba(45, 157, 85, 0.3); }
+.cell.disabled { cursor: default; }
+.legend { margin-top: 10px; font-size: 13px; color: #334155; }
+@media (max-width: 520px) { :root { --board-size: 300px; } }
