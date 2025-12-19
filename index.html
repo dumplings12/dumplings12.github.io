@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>1082922-HW10</title>
+    <title>Othello / Reversi</title>
     <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -13,19 +13,22 @@
             <div class="status">輪到：<span id="currentPlayer">黑</span></div>
             <div class="score">黑：<span id="blackScore">2</span> 白：<span id="whiteScore">2</span></div>
         </section>
-        <section class="ai-settings" style="margin-bottom: 10px; text-align: center;">
+
+        <section class="ai-settings" style="margin-bottom: 15px; text-align: center; display: flex; justify-content: center; gap: 10px; align-items: center;">
             <label for="difficulty">白棋難度：</label>
-            <select id="difficulty">
+            <select id="difficulty" style="padding: 5px; border-radius: 4px;">
                 <option value="basic">基本 (隨機)</option>
                 <option value="advanced">進階 (權重策略)</option>
             </select>
             <button id="restartBtn">重新開始</button>
         </section>
+
         <section class="board-wrap">
             <div id="board" class="board" aria-label="Othello 棋盤" role="grid"></div>
         </section>
+
         <section class="legend">
-            <p>提示：你是黑棋。綠色格子為可下的位置；數字顯示該處可翻轉數量。</p>
+            <p>提示：你是黑棋。綠色格子為可下位置，數字代表可翻轉敵方棋子數。</p>
         </section>
     </main>
     <script src="script.js"></script>
