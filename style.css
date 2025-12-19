@@ -1,6 +1,5 @@
 :root {
     --board-size: 480px;
-    --piece-speed: 0.5s;
 }
 * { box-sizing: border-box; }
 body {
@@ -13,7 +12,9 @@ body {
     margin: 0;
 }
 .container { width: calc(var(--board-size) + 40px); }
-h1 { text-align: center; color: #111827; }
+h1 { text-align: center; color: #111827; margin: 10px 0; }
+
+.controls { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: bold; }
 
 .board-wrap {
     background: #1a4d2e;
@@ -21,58 +22,68 @@ h1 { text-align: center; color: #111827; }
     border-radius: 12px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.3);
 }
+
 .board {
     width: var(--board-size);
     height: var(--board-size);
     display: grid;
+    /* 強制 8x8 均分，避免被內容撐開 */
     grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr); 
     gap: 4px;
     background: #064e3b;
 }
+
 .cell {
     background: #166534;
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    perspective: 1000px; /* 3D 透視 */
+    perspective: 1000px;
+    overflow: hidden; /* 確保內容不溢出影響佈局 */
 }
 
-/* 立體棋子容器 */
+/* 3D 棋子 */
 .piece {
-    width: 85%;
-    height: 85%;
+    width: 80%;
+    height: 80%;
     position: relative;
-    transition: transform var(--piece-speed) cubic-bezier(0.4, 0, 0.2, 1);
     transform-style: preserve-3d;
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* 棋子正反面共有樣式 */
 .piece div {
     position: absolute;
     width: 100%;
     height: 100%;
     border-radius: 50%;
-    backface-visibility: hidden; /* 隱藏背面 */
-    box-shadow: inset 0 -4px 6px rgba(0,0,0,0.4), 0 4px 8px rgba(0,0,0,0.3);
+    backface-visibility: hidden;
+    box-shadow: inset -2px -4px 6px rgba(0,0,0,0.5), 0 4px 8px rgba(0,0,0,0.4);
 }
 
-.piece .black-side {
-    background: radial-gradient(circle at 30% 30%, #444, #000);
+.piece .black-side { background: radial-gradient(circle at 30% 30%, #444, #000); }
+.piece .white-side { 
+    background: radial-gradient(circle at 30% 30%, #fff, #ddd); 
+    transform: rotateY(180deg); 
 }
 
-.piece .white-side {
-    background: radial-gradient(circle at 30% 30%, #fff, #ccc);
-    transform: rotateY(180deg); /* 背面旋轉 180 度 */
-}
-
-/* 翻轉狀態控制 */
 .piece.is-white { transform: rotateY(180deg); }
 .piece.is-black { transform: rotateY(0deg); }
 
-/* 輔助 UI */
+/* 提示數字：絕對定位，不影響排版 */
+.hint {
+    position: absolute;
+    bottom: 2px;
+    right: 4px;
+    font-size: 11px;
+    font-weight: bold;
+    color: rgba(255,255,255,0.5);
+    pointer-events: none;
+    z-index: 10;
+}
+
 .cell.possible { background: rgba(255, 255, 255, 0.1); cursor: pointer; }
 .cell.possible:hover { background: rgba(255, 255, 255, 0.2); }
-.hint { color: rgba(255,255,255,0.6); font-size: 12px; font-weight: bold; pointer-events: none; }
 
 @media (max-width: 520px) { :root { --board-size: 90vw; } }
