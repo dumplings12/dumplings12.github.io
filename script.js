@@ -1,140 +1,82 @@
-const SIZE = 8;
-let board = [];
-let current = 1; 
-const boardEl = document.getElementById('board');
-const currentPlayerEl = document.getElementById('currentPlayer');
-const blackScoreEl = document.getElementById('blackScore');
-const whiteScoreEl = document.getElementById('whiteScore');
-const restartBtn = document.getElementById('restartBtn');
-
-const DIRS = [
- [-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]
-];
-
-function initBoard(){
- board = Array.from({length:SIZE}, () => Array(SIZE).fill(0));
- const m = SIZE/2;
- board[m-1][m-1] = 2; 
- board[m][m] = 2;
- board[m-1][m] = 1; 
- board[m][m-1] = 1;
- current = 1; 
- render();
+:root {
+    --board-size: 480px;
+    --cell-size: calc(var(--board-size) / 8);
 }
-
-function within(r,c){
- return r>=0 && r<SIZE && c>=0 && c<SIZE;
+* { box-sizing: border-box; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+    background: #f2f6f9;
+    color: #1f2937;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    margin: 0;
 }
-
-function flipsForMove(r,c,player){
- if(board[r][c] !== 0) return [];
- const opponent = player===1?2:1;
- let toFlip = [];
- for(const [dr,dc] of DIRS){
-     let rr = r+dr, cc = c+dc;
-     const line = [];
-     while(within(rr,cc) && board[rr][cc] === opponent){
-         line.push([rr,cc]);
-         rr += dr; cc += dc;
-     }
-     if(line.length>0 && within(rr,cc) && board[rr][cc] === player){
-         toFlip = toFlip.concat(line);
-     }
- }
- return toFlip;
+.container { width: calc(var(--board-size) + 40px); }
+h1 { text-align: center; margin: 0 0 12px; }
+.controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
 }
-
-function getLegalMoves(player){
- const moves = new Map();
- for(let r=0;r<SIZE;r++){
-     for(let c=0;c<SIZE;c++){
-         const flips = flipsForMove(r,c,player);
-         if(flips.length>0) moves.set(`${r},${c}`, flips);
-     }
- }
- return moves;
+.controls .status, .controls .score { font-weight: 600; }
+#restartBtn {
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    cursor: pointer;
 }
-
-function placeMove(r,c,player,flips){
- board[r][c] = player;
- for(const [rr,cc] of flips){ board[rr][cc]=player; }
+.board-wrap {
+    background: linear-gradient(180deg, #e6f0ea, #dbeee0);
+    padding: 10px;
+    border-radius: 12px;
+    box-shadow: 0 6px 18px rgba(15,23,42,0.08);
 }
-
-function computeScore(){
- let b=0,w=0;
- for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
-     if(board[r][c]===1) b++;
-     if(board[r][c]===2) w++;
- }
- return {b,w};
+.board {
+    width: var(--board-size);
+    height: var(--board-size);
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    gap: 4px;
+    padding: 4px;
+    background: #2b6b3f;
+    border-radius: 8px;
 }
-
-function render(){
- boardEl.innerHTML = '';
- const moves = getLegalMoves(current);
- for(let r=0;r<SIZE;r++){
-     for(let c=0;c<SIZE;c++){
-         const cell = document.createElement('div');
-         cell.classList.add('cell');
-         cell.setAttribute('role','gridcell');
-         cell.dataset.r = r; cell.dataset.c = c;
-         const val = board[r][c];
-         if(val===0){
-             cell.classList.add('empty');
-         } else {
-             const piece = document.createElement('div');
-             piece.classList.add('piece');
-             piece.classList.add(val===1? 'black':'white');
-             cell.appendChild(piece);
-         }
-         const key = `${r},${c}`;
-         if(moves.has(key)){
-             cell.classList.add('possible','available');
-             const flips = moves.get(key);
-             const hint = document.createElement('div');
-             hint.className='hint';
-             hint.textContent = flips.length;
-             cell.appendChild(hint);
-             cell.addEventListener('click', ()=> onCellClick(r,c,moves.get(key)));
-         } else {
-             cell.classList.add('disabled');
-         }
-         boardEl.appendChild(cell);
-     }
- }
- const scores = computeScore();
- blackScoreEl.textContent = scores.b;
- whiteScoreEl.textContent = scores.w;
- currentPlayerEl.textContent = current===1? '黑':'白';
- checkForEndOrPass();
+.cell {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
 }
-
-function onCellClick(r,c,flips){
- placeMove(r,c,current,flips);
- current = current===1?2:1;
- render();
+.cell .piece {
+    width: 80%;
+    height: 80%;
+    border-radius: 50%;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+    z-index: 2;
 }
-
-function checkForEndOrPass(){
- const currMoves = getLegalMoves(current);
- if(currMoves.size>0) return; 
- const other = current===1?2:1;
- const otherMoves = getLegalMoves(other);
- if(otherMoves.size>0){
-     setTimeout(()=>{
-         alert((current===1? '黑':'白') + ' 無子可下，回合由對方繼續。');
-         current = other;
-         render();
-     },10);
-     return;
- }
- const scores = computeScore();
- let msg = `遊戲結束。 黑 ${scores.b} : 白 ${scores.w}。 `;
- if(scores.b>scores.w) msg += '黑方獲勝！';
- else if(scores.w>scores.b) msg += '白方獲勝！';
- else msg += '平手！';
- setTimeout(()=>alert(msg), 10);
+.piece.black { background: #111; }
+.piece.white { background: #fff; border: 1px solid #ccc; }
+.cell.possible { background: rgba(255, 255, 255, 0.1); border: 1px dashed rgba(255,255,255,0.4); }
+.cell.available:hover { background: rgba(255, 255, 255, 0.2); }
+.cell .hint {
+    position: absolute;
+    right: 4px;
+    bottom: 4px;
+    font-size: 10px;
+    color: #fff;
+    opacity: 0.8;
 }
+.legend { margin-top: 10px; font-size: 13px; color: #334155; }
 
-restartBtn.addEventListener('click', ()=>initBoard());
-initBoard();
+@media (max-width: 520px) {
+    :root { --board-size: 90vw; }
+}
