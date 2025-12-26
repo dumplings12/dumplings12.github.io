@@ -1,241 +1,905 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
-    <meta charset="UTF-8">
-    <title>九路圍棋 v12.0 Final_Core</title>
-    <style>
-        :root { --board: #DEB887; --line: #333; }
-        body { font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; background: #1a1a2e; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; color: #fff; }
-        .wrapper { text-align: center; background: #16213e; padding: 25px; border-radius: 20px; box-shadow: 0 15px 50px rgba(0,0,0,0.8); }
-        .status { font-size: 1.4em; margin-bottom: 15px; color: #e94560; font-weight: bold; min-height: 1.5em; background: rgba(0,0,0,0.3); border-radius: 8px; line-height: 40px; }
-        .board { position: relative; width: 450px; height: 450px; background: var(--board); margin: 0 auto; border: 5px solid #53354a; }
-        .grid { position: absolute; top: 25px; left: 25px; width: 400px; height: 400px; display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); pointer-events: none; }
-        .grid div { border: 1px solid var(--line); }
-        .hoshi { position: absolute; width: 8px; height: 8px; background: var(--line); border-radius: 50%; transform: translate(-50%, -50%); z-index: 1; pointer-events: none; }
-        .layer { position: absolute; top: 0; left: 0; width: 450px; height: 450px; display: grid; grid-template-columns: repeat(9, 1fr); grid-template-rows: repeat(9, 1fr); z-index: 10; }
-        .cell { width: 50px; height: 50px; cursor: pointer; display: flex; justify-content: center; align-items: center; }
-        .stone { width: 44px; height: 44px; border-radius: 50%; z-index: 5; box-shadow: 0 4px 8px rgba(0,0,0,0.6); pointer-events: none; }
-        .black { background: radial-gradient(circle at 30% 30%, #444, #000); }
-        .white { background: radial-gradient(circle at 30% 30%, #fff, #bbb); }
-        .btns { margin-top: 20px; }
-        button { padding: 10px 22px; margin: 5px; cursor: pointer; border-radius: 8px; border: none; font-weight: bold; background: #0f3460; color: white; transition: 0.2s; }
-        button:hover { background: #e94560; transform: translateY(-2px); }
-        .score { margin-top: 15px; font-size: 1.1em; color: #95a5a6; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>11XXXXX -FinalTerm</title>
+  <style>
+    :root{
+      --bg1:#1f2937; --bg2:#111827; --card:#0b1220cc;
+      --text:#e5e7eb; --muted:#9ca3af; --accent:#f59e0b;
+      --wood:#c89b62;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; min-height:100vh;
+      display:flex; align-items:center; justify-content:center;
+      background: radial-gradient(1200px 600px at 20% 10%, #334155, transparent),
+                  radial-gradient(900px 500px at 80% 40%, #1f2937, transparent),
+                  linear-gradient(135deg,var(--bg1),var(--bg2));
+      color:var(--text);
+      font-family: system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans TC","PingFang TC",sans-serif;
+      padding:24px;
+    }
+    .wrap{
+      width:min(980px, 100%);
+      display:grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap:18px;
+    }
+    @media (max-width: 880px){
+      .wrap{ grid-template-columns: 1fr; }
+    }
+    .card{
+      background: var(--card);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:18px;
+      box-shadow: 0 12px 30px rgba(0,0,0,.35);
+      overflow:hidden;
+    }
+    header{
+      padding:16px 18px 10px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      display:flex; justify-content:space-between; align-items:center; gap:12px;
+    }
+    header h1{ margin:0; font-size:18px; letter-spacing:.3px; }
+    header .pill{
+      padding:6px 10px; border-radius:999px;
+      background: rgba(245,158,11,.12);
+      border:1px solid rgba(245,158,11,.35);
+      color: #ffd28a;
+      font-size:12px;
+      white-space:nowrap;
+    }
+    .boardArea{ padding:14px; display:flex; justify-content:center; }
+    canvas{
+      width: min(560px, 95vw);
+      height: auto;
+      background: linear-gradient(180deg, #d7b07a, #b6864f);
+      border-radius: 14px;
+      border: 2px solid rgba(0,0,0,.35);
+      box-shadow: inset 0 0 0 2px rgba(255,255,255,.08),
+                  0 14px 25px rgba(0,0,0,.35);
+      touch-action: manipulation;
+    }
+    .side{ padding:16px; display:flex; flex-direction:column; gap:12px; }
+    .status{
+      padding:12px 12px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(17,24,39,.55);
+      line-height:1.5;
+      font-size:14px;
+    }
+    .row{ display:flex; gap:10px; flex-wrap:wrap; }
+    button{
+      appearance:none; border:none;
+      padding:10px 12px;
+      border-radius: 12px;
+      background: rgba(59,130,246,.16);
+      border: 1px solid rgba(59,130,246,.35);
+      color: var(--text);
+      cursor:pointer;
+      font-weight:600;
+    }
+    button:hover{ filter:brightness(1.1); }
+    button:disabled{ opacity:.45; cursor:not-allowed; }
+    .warnBtn{
+      background: rgba(245,158,11,.14);
+      border-color: rgba(245,158,11,.40);
+    }
+    .dangerBtn{
+      background: rgba(239,68,68,.14);
+      border-color: rgba(239,68,68,.40);
+    }
+    .small{
+      font-size:12px; color:var(--muted);
+      line-height:1.5;
+    }
+    .kpi{
+      display:grid; grid-template-columns: 1fr 1fr; gap:10px;
+    }
+    .kpi .box{
+      padding:10px 12px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.08);
+    }
+    .kpi .box .t{ font-size:12px; color:var(--muted); }
+    .kpi .box .v{ font-size:20px; font-weight:800; margin-top:2px; }
+    .kbd{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .hr{ height:1px; background: rgba(255,255,255,.08); margin:2px 0; }
+    .list{ margin:0; padding-left:18px; }
+    .badge{
+      display:inline-block; padding:2px 8px; border-radius:999px;
+      border:1px solid rgba(255,255,255,.15);
+      background: rgba(255,255,255,.06);
+      font-size:12px; color:var(--muted);
+    }
+  </style>
 </head>
-<body>
 
-<div class="wrapper">
-    <div class="status" id="msg">黑棋回合</div>
-    <div class="board" id="boardBase">
-        <div class="grid" id="bgLines"></div>
-        <div class="layer" id="ui"></div>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <header>
+        <h1>九路圍棋（Black: User 先手，White: Computer 後手）</h1>
+        <div class="pill" id="modePill">對局中</div>
+      </header>
+      <div class="boardArea">
+        <canvas id="goCanvas" width="640" height="640" aria-label="9x9 Go board"></canvas>
+      </div>
     </div>
-    <div class="score">黑子: <span id="bS">0</span> | 白子: <span id="wS">0</span></div>
-    <div class="btns">
-        <button onclick="location.reload()">重新開始</button>
-        <button onclick="game.pass()" style="background:#e67e22">讓子 (Pass)</button>
-        <button onclick="game.undo()">悔棋</button>
-        <button id="aiBtn" onclick="toggleAI()">AI: 開</button>
+
+    <div class="card">
+      <div class="side">
+        <div class="status" id="status"></div>
+
+        <div class="kpi">
+          <div class="box">
+            <div class="t">黑（你）提子數</div>
+            <div class="v" id="capB">0</div>
+          </div>
+          <div class="box">
+            <div class="t">白（電腦）提子數</div>
+            <div class="v" id="capW">0</div>
+          </div>
+          <div class="box">
+            <div class="t">連續 Pass</div>
+            <div class="v"><span id="passN">0</span><span class="badge">/2</span></div>
+          </div>
+          <div class="box">
+            <div class="t">最後一步</div>
+            <div class="v kbd" style="font-size:16px" id="lastMove">-</div>
+          </div>
+        </div>
+
+        <div class="row">
+          <button class="warnBtn" id="btnPass">Pass</button>
+          <button id="btnUndo">悔棋</button>
+          <button class="dangerBtn" id="btnNew">新局</button>
+        </div>
+
+        <div class="row">
+          <button id="btnAI">AI：開</button>
+          <button id="btnHelp">規則提示</button>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="small">
+          <div class="badge">基本功能（70%）</div>
+          <ul class="list">
+            <li>交叉點格線顯示、落子在交叉點</li>
+            <li>提子</li>
+            <li>禁著點：自殺禁手 + 簡化 Ko 禁手（避免立即打劫還原）</li>
+            <li>終局：雙方連續 Pass 兩次或雙方無合法著手</li>
+            <li>終局決算：提供「標記死子」→ 再算黑白面積（簡化版活棋判斷）</li>
+          </ul>
+        </div>
+
+        <div class="small">
+          <div class="badge">加分 UI/UX（最多 30%）</div>
+          <ul class="list">
+            <li>最後一手高亮</li>
+            <li>叫吃（Atari）提示：落子後若對手某一串只剩 1 口氣，顯示警告</li>
+            <li>終局可點擊棋串標記「死子」</li>
+          </ul>
+        </div>
+
+      </div>
     </div>
-</div>
+  </div>
 
 <script>
-class GoCore {
-    constructor() {
-        this.board = Array(9).fill().map(() => Array(9).fill(0));
-        this.history = [];
-        this.turn = 1;
-        this.aiEnabled = true;
-        this.passCount = 0;
-        this.gameOver = false;
-        this.init();
-    }
+(() => {
+  // =========================
+  // 0) 小工具
+  // =========================
+  const N = 9;
+  const BLACK = 1;
+  const WHITE = -1;
+  const EMPTY = 0;
 
-    init() {
-        const bg = document.getElementById('bgLines');
-        for(let i=0; i<64; i++) bg.innerHTML += '<div></div>';
-        [[2,2],[2,6],[4,4],[6,2],[6,6]].forEach(p => {
-            const h = document.createElement('div'); h.className = 'hoshi';
-            h.style.top = (p[0]*50+25)+'px'; h.style.left = (p[1]*50+25)+'px';
-            document.getElementById('boardBase').appendChild(h);
-        });
-        const layer = document.getElementById('ui');
-        for(let r=0; r<9; r++) for(let c=0; c<9; c++) {
-            const cell = document.createElement('div');
-            cell.className = 'cell'; cell.onclick = () => this.handle(r, c);
-            layer.appendChild(cell);
+  const deepCopyBoard = (b) => b.map(row => row.slice());
+  const boardToKey = (b) => b.flat().join(',');
+
+  const inRange = (r,c) => r>=0 && r<N && c>=0 && c<N;
+
+  const dirs4 = [[-1,0],[1,0],[0,-1],[0,1]];
+
+  function neighbors4(r,c){
+    const out = [];
+    for (const [dr,dc] of dirs4){
+      const nr=r+dr, nc=c+dc;
+      if (inRange(nr,nc)) out.push([nr,nc]);
+    }
+    return out;
+  }
+
+  function fmtRC(r,c){
+    // 顯示成 (1..9, 1..9)
+    return `(${r+1},${c+1})`;
+  }
+
+  // =========================
+  // 1) 盤面 & 棋串（Group）
+  // =========================
+  function getGroup(board, sr, sc){
+    const color = board[sr][sc];
+    if (color === EMPTY) return { stones: [], color, liberties: new Set() };
+
+    const visited = Array.from({length:N}, () => Array(N).fill(false));
+    const stack = [[sr,sc]];
+    const stones = [];
+    const liberties = new Set();
+
+    visited[sr][sc]=true;
+
+    while(stack.length){
+      const [r,c] = stack.pop();
+      stones.push([r,c]);
+
+      for (const [nr,nc] of neighbors4(r,c)){
+        if (board[nr][nc] === EMPTY){
+          liberties.add(nr + ',' + nc);
+        } else if (board[nr][nc] === color && !visited[nr][nc]){
+          visited[nr][nc]=true;
+          stack.push([nr,nc]);
         }
-        this.render();
+      }
     }
 
-    handle(r, c) {
-        if (this.gameOver || (this.aiEnabled && this.turn === -1)) return;
-        if (this.move(r, c, this.turn)) {
-            this.passCount = 0;
-            if (this.aiEnabled && !this.gameOver) setTimeout(() => this.aiAction(), 600);
+    return { stones, color, liberties };
+  }
+
+  function removeStones(board, stones){
+    for (const [r,c] of stones) board[r][c]=EMPTY;
+  }
+
+  // =========================
+  // 2) 合法性：自殺 + Ko（立即還原禁手）
+  // =========================
+  function playOnBoard(board, r, c, color){
+    // 回傳：{nextBoard, capturedCount, capturedStones}
+    const next = deepCopyBoard(board);
+    next[r][c]=color;
+
+    let captured = [];
+    const opp = -color;
+
+    // 看四周對手棋串是否被提
+    for (const [nr,nc] of neighbors4(r,c)){
+      if (next[nr][nc] === opp){
+        const g = getGroup(next, nr, nc);
+        if (g.liberties.size === 0){
+          captured = captured.concat(g.stones);
         }
+      }
+    }
+    if (captured.length){
+      removeStones(next, captured);
     }
 
-    move(r, c, p) {
-        if (this.board[r][c] !== 0) return false;
+    // 最後檢查自己是否自殺（若沒吃子，自己氣必須>0）
+    const self = getGroup(next, r, c);
+    const suicide = (self.liberties.size === 0);
+    return { nextBoard: next, capturedCount: captured.length, capturedStones: captured, suicide };
+  }
 
-        // 1. 試模擬落子
-        let testBoard = JSON.parse(JSON.stringify(this.board));
-        testBoard[r][c] = p;
+  // =========================
+  // 3) 簡易 AI：能吃就吃 / 避免送死 / 偏好中心
+  // =========================
+  function scoreMove(board, r, c, color){
+    const sim = playOnBoard(board, r, c, color);
+    if (sim.suicide) return -1e9;
 
-        // 2. 核心：偵測並移除對手死子
-        let killed = false;
-        this.getAdjs(r, c).forEach(([nr, nc]) => {
-            if (testBoard[nr][nc] === -p) {
-                const group = this.getGroup(nr, nc, testBoard);
-                if (this.getLibs(group, testBoard) === 0) {
-                    group.forEach(([gr, gc]) => testBoard[gr][gc] = 0);
-                    killed = true;
-                }
-            }
-        });
+    let s = 0;
+    // 吃子加分
+    s += sim.capturedCount * 50;
 
-        // 3. 禁著點判斷：如果沒殺掉對手，且自己落子後也沒氣
-        const myGroup = this.getGroup(r, c, testBoard);
-        if (this.getLibs(myGroup, testBoard) === 0) {
-            if (!this.aiEnabled || p === 1) alert("禁著點！此處無法落子。");
-            return false;
+    // 位置偏好：中心 > 星位 > 邊角
+    const center = 4;
+    const dist = Math.abs(r-center) + Math.abs(c-center);
+    s += (10 - dist);
+
+    // 若造成對手叫吃（對手某串只剩1氣）→ 加分
+    s += countAtari(sim.nextBoard, -color) * 8;
+
+    // 避免讓自己被叫吃（自己某串只剩1氣）→ 扣分
+    s -= countAtari(sim.nextBoard, color) * 10;
+
+    return s;
+  }
+
+  function allLegalMoves(board, color, prevKey){
+    const moves = [];
+    for (let r=0;r<N;r++){
+      for (let c=0;c<N;c++){
+        if (board[r][c] !== EMPTY) continue;
+        const sim = playOnBoard(board, r, c, color);
+        if (sim.suicide) continue;
+
+        // Ko：禁止「下一手後盤面」等於「上一手前盤面」
+        // prevKey = 上一個局面（對方下完後）的 key；我們要避免 sim.nextBoard == previousPrevious? 這裡做最簡 Ko：避免回到上一步局面
+        // 做法：傳入 koBannedKey（上一手局面 key），如果 sim.nextBoard 的 key 等於 koBannedKey，就禁
+        const key = boardToKey(sim.nextBoard);
+        if (key === prevKey) continue;
+
+        moves.push({r,c, sim});
+      }
+    }
+    return moves;
+  }
+
+  // =========================
+  // 4) 叫吃 (Atari) 計數：某色棋串只有 1 口氣
+  // =========================
+  function countAtari(board, color){
+    const visited = Array.from({length:N}, () => Array(N).fill(false));
+    let atariGroups = 0;
+
+    for (let r=0;r<N;r++){
+      for (let c=0;c<N;c++){
+        if (board[r][c] !== color || visited[r][c]) continue;
+        const g = getGroup(board, r, c);
+        for (const [sr,sc] of g.stones) visited[sr][sc]=true;
+        if (g.liberties.size === 1) atariGroups++;
+      }
+    }
+    return atariGroups;
+  }
+
+  // =========================
+  // 5) 終局計分（簡化）：面積制（Stone + Territory）
+  //    並提供「標記死子」來做活棋判斷（人工輔助）
+  // =========================
+  function computeAreaScore(board, deadMask){
+    // deadMask[r][c] = true 表示該子被標為死子（先從盤面移除再算）
+    const b = deepCopyBoard(board);
+    for (let r=0;r<N;r++){
+      for (let c=0;c<N;c++){
+        if (deadMask[r][c] && b[r][c] !== EMPTY){
+          b[r][c] = EMPTY;
         }
-
-        // 4. 正式提交
-        this.history.push(JSON.parse(JSON.stringify(this.board)));
-        this.board = testBoard;
-        this.turn = -p;
-        this.render();
-        return true;
+      }
     }
 
-    getAdjs(r, c) {
-        return [[r-1,c],[r+1,c],[r,c-1],[r,c+1]].filter(([y,x]) => y>=0 && y<9 && x>=0 && x<9);
+    let black = 0, white = 0;
+
+    // 1) 棋子本身
+    for (let r=0;r<N;r++){
+      for (let c=0;c<N;c++){
+        if (b[r][c] === BLACK) black++;
+        else if (b[r][c] === WHITE) white++;
+      }
     }
 
-    getGroup(r, c, b) {
-        const color = b[r][c], group = [], queue = [[r,c]], visited = new Set([`${r},${c}`]);
-        while(queue.length > 0) {
-            const [cr, cc] = queue.shift();
-            group.push([cr, cc]);
-            this.getAdjs(cr, cc).forEach(([nr, nc]) => {
-                if (b[nr][nc] === color && !visited.has(`${nr},${nc}`)) {
-                    visited.add(`${nr},${nc}`); queue.push([nr, nc]);
-                }
-            });
+    // 2) 空點圍地
+    const visited = Array.from({length:N}, () => Array(N).fill(false));
+
+    function flood(sr,sc){
+      const stack = [[sr,sc]];
+      visited[sr][sc]=true;
+      let pts = [[sr,sc]];
+      let border = new Set();
+
+      while(stack.length){
+        const [r,c] = stack.pop();
+        for (const [nr,nc] of neighbors4(r,c)){
+          if (b[nr][nc] === EMPTY && !visited[nr][nc]){
+            visited[nr][nc]=true;
+            stack.push([nr,nc]);
+            pts.push([nr,nc]);
+          } else if (b[nr][nc] !== EMPTY){
+            border.add(b[nr][nc]); // +1 or -1
+          }
         }
-        return group;
+      }
+      return { pts, border };
     }
 
-    getLibs(group, b) {
-        const libs = new Set();
-        group.forEach(([r, c]) => this.getAdjs(r, c).forEach(([nr, nc]) => {
-            if (b[nr][nc] === 0) libs.add(`${nr},${nc}`);
-        }));
-        return libs.size;
-    }
+    for (let r=0;r<N;r++){
+      for (let c=0;c<N;c++){
+        if (b[r][c] !== EMPTY || visited[r][c]) continue;
+        const reg = flood(r,c);
 
-    aiAction() {
-        if (this.gameOver) return;
-        let candidates = [];
-        for(let r=0; r<9; r++) for(let c=0; c<9; c++) {
-            if (this.board[r][c] === 0) {
-                let s = this.eval(r, c);
-                if (s > -1) candidates.push({r, c, s});
-            }
+        // 只有單色邊界才算該色領地
+        if (reg.border.size === 1){
+          const only = [...reg.border][0];
+          if (only === BLACK) black += reg.pts.length;
+          if (only === WHITE) white += reg.pts.length;
         }
-        if (candidates.length > 0) {
-            candidates.sort((a, b) => b.s - a.s);
-            this.move(candidates[0].r, candidates[0].c, -1);
-            this.passCount = 0;
-        } else {
-            this.pass();
-        }
+      }
     }
 
-    eval(r, c) {
-        let b = JSON.parse(JSON.stringify(this.board));
-        b[r][c] = -1;
-        let score = 0, canCap = false;
-        this.getAdjs(r, c).forEach(([nr, nc]) => {
-            if (b[nr][nc] === 1) {
-                const g = this.getGroup(nr, nc, b);
-                if (this.getLibs(g, b) === 0) { score += (g.length * 10); canCap = true; }
-            }
-        });
-        const myG = this.getGroup(r, c, b);
-        if (this.getLibs(myG, b) === 0 && !canCap) return -1;
-        return score + Math.random();
+    return { black, white };
+  }
+
+  // =========================
+  // 6) UI / Canvas 畫棋盤（交叉點）
+  // =========================
+  const canvas = document.getElementById('goCanvas');
+  const ctx = canvas.getContext('2d');
+
+  const statusEl = document.getElementById('status');
+  const modePill = document.getElementById('modePill');
+  const capBEl = document.getElementById('capB');
+  const capWEl = document.getElementById('capW');
+  const passEl = document.getElementById('passN');
+  const lastMoveEl = document.getElementById('lastMove');
+
+  const btnPass = document.getElementById('btnPass');
+  const btnUndo = document.getElementById('btnUndo');
+  const btnNew = document.getElementById('btnNew');
+  const btnAI = document.getElementById('btnAI');
+  const btnHelp = document.getElementById('btnHelp');
+
+  // 幾何：9x9 交叉點，外框留 padding
+  const PAD = 70;
+  const SIZE = canvas.width;
+  const CELL = (SIZE - PAD*2) / (N-1);
+  const STONE_R = CELL * 0.42;
+
+  function rcToXY(r,c){
+    return { x: PAD + c*CELL, y: PAD + r*CELL };
+  }
+
+  function xyToRC(x,y){
+    // 找最近交叉點
+    const c = Math.round((x - PAD) / CELL);
+    const r = Math.round((y - PAD) / CELL);
+    if (!inRange(r,c)) return null;
+    const p = rcToXY(r,c);
+    const d = Math.hypot(p.x - x, p.y - y);
+    if (d > CELL*0.45) return null;
+    return { r, c };
+  }
+
+  function drawBoard(){
+    ctx.clearRect(0,0,SIZE,SIZE);
+
+    // 背景木紋（簡單）
+    const grd = ctx.createLinearGradient(0,0,0,SIZE);
+    grd.addColorStop(0,'#d9b07a');
+    grd.addColorStop(1,'#b5844e');
+    ctx.fillStyle = grd;
+    ctx.fillRect(0,0,SIZE,SIZE);
+
+    // 外框
+    ctx.strokeStyle = 'rgba(0,0,0,.55)';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(PAD-22, PAD-22, (N-1)*CELL + 44, (N-1)*CELL + 44);
+
+    // 格線
+    ctx.strokeStyle = 'rgba(0,0,0,.75)';
+    ctx.lineWidth = 2;
+
+    for (let i=0;i<N;i++){
+      // 橫線
+      ctx.beginPath();
+      ctx.moveTo(PAD, PAD + i*CELL);
+      ctx.lineTo(PAD + (N-1)*CELL, PAD + i*CELL);
+      ctx.stroke();
+
+      // 直線
+      ctx.beginPath();
+      ctx.moveTo(PAD + i*CELL, PAD);
+      ctx.lineTo(PAD + i*CELL, PAD + (N-1)*CELL);
+      ctx.stroke();
     }
 
-    pass() {
-        this.passCount++;
-        this.turn = -this.turn;
-        this.render();
-        if (this.passCount >= 2) this.end();
-        else if (this.aiEnabled && this.turn === -1) setTimeout(() => this.aiAction(), 600);
+    // 星位：9路常用 (3,3),(3,7),(7,3),(7,7),(5,5) -> 0-based (2,2),(2,6),(6,2),(6,6),(4,4)
+    const hoshi = [[2,2],[2,6],[6,2],[6,6],[4,4]];
+    ctx.fillStyle = 'rgba(0,0,0,.75)';
+    for (const [r,c] of hoshi){
+      const {x,y} = rcToXY(r,c);
+      ctx.beginPath();
+      ctx.arc(x,y,5,0,Math.PI*2);
+      ctx.fill();
+    }
+  }
+
+  function drawStone(r,c,color, isLast=false, isDead=false){
+    const {x,y} = rcToXY(r,c);
+    // 陰影
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,.35)';
+    ctx.shadowBlur = 10;
+    ctx.shadowOffsetY = 4;
+
+    // 棋子
+    const g = ctx.createRadialGradient(x-STONE_R*0.3, y-STONE_R*0.3, STONE_R*0.2, x, y, STONE_R);
+    if (color === BLACK){
+      g.addColorStop(0, '#3b3b3b');
+      g.addColorStop(1, '#0b0b0b');
+    } else {
+      g.addColorStop(0, '#ffffff');
+      g.addColorStop(1, '#d8d8d8');
+    }
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(x,y,STONE_R,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+
+    // 最後一手高亮
+    if (isLast){
+      ctx.strokeStyle = 'rgba(245,158,11,.95)';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(x,y,STONE_R+4,0,Math.PI*2);
+      ctx.stroke();
     }
 
-    undo() {
-        if (this.history.length > 0) {
-            this.board = this.history.pop();
-            this.turn = this.aiEnabled ? 1 : (this.turn === 1 ? -1 : 1);
-            this.gameOver = false; this.passCount = 0;
-            this.render();
-        }
+    // 死子標記
+    if (isDead){
+      ctx.strokeStyle = 'rgba(239,68,68,.95)';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(x-STONE_R*0.6, y-STONE_R*0.6);
+      ctx.lineTo(x+STONE_R*0.6, y+STONE_R*0.6);
+      ctx.moveTo(x+STONE_R*0.6, y-STONE_R*0.6);
+      ctx.lineTo(x-STONE_R*0.6, y+STONE_R*0.6);
+      ctx.stroke();
+    }
+  }
+
+  // =========================
+  // 7) 遊戲狀態
+  // =========================
+  let board, current, aiEnabled, gameOver, consecutivePasses;
+  let capturesBlack, capturesWhite;
+  let history; // stack of snapshots: {board, current, passes, capB, capW, lastMove, koKey}
+  let lastMove = null;
+  let koBannedKey = null; // 簡化 Ko：禁止回到上一手局面
+
+  // scoring mode
+  let scoringMode = false;
+  let dead = Array.from({length:N}, () => Array(N).fill(false));
+
+  function resetGame(){
+    board = Array.from({length:N}, () => Array(N).fill(EMPTY));
+    current = BLACK; // 使用者黑先
+    aiEnabled = true;
+    gameOver = false;
+    consecutivePasses = 0;
+    capturesBlack = 0;
+    capturesWhite = 0;
+    history = [];
+    lastMove = null;
+    koBannedKey = null;
+    scoringMode = false;
+    dead = Array.from({length:N}, () => Array(N).fill(false));
+
+    pushHistory();
+    updateUI();
+    render();
+  }
+
+  function pushHistory(){
+    history.push({
+      board: deepCopyBoard(board),
+      current,
+      consecutivePasses,
+      capturesBlack,
+      capturesWhite,
+      lastMove: lastMove ? {...lastMove} : null,
+      koBannedKey
+    });
+  }
+
+  function popHistory(){
+    if (history.length <= 1) return null;
+    history.pop();
+    const prev = history[history.length-1];
+    board = deepCopyBoard(prev.board);
+    current = prev.current;
+    consecutivePasses = prev.consecutivePasses;
+    capturesBlack = prev.capturesBlack;
+    capturesWhite = prev.capturesWhite;
+    lastMove = prev.lastMove ? {...prev.lastMove} : null;
+    koBannedKey = prev.koBannedKey;
+    gameOver = false;
+    scoringMode = false;
+    dead = Array.from({length:N}, () => Array(N).fill(false));
+    updateUI();
+    render();
+    return prev;
+  }
+
+  function render(){
+    drawBoard();
+
+    for (let r=0;r<N;r++){
+      for (let c=0;c<N;c++){
+        if (board[r][c] === EMPTY) continue;
+        const isLast = lastMove && lastMove.r===r && lastMove.c===c;
+        const isDead = scoringMode ? dead[r][c] : false;
+        drawStone(r,c,board[r][c], isLast, isDead);
+      }
+    }
+  }
+
+  function hasAnyLegalMove(color){
+    const moves = allLegalMoves(board, color, koBannedKey);
+    return moves.length > 0;
+  }
+
+  function setStatus(html){
+    statusEl.innerHTML = html;
+  }
+
+  function updateUI(){
+    capBEl.textContent = capturesBlack;
+    capWEl.textContent = capturesWhite;
+    passEl.textContent = consecutivePasses;
+
+    btnUndo.disabled = (history.length <= 1) || scoringMode;
+    btnPass.disabled = gameOver && !scoringMode;
+
+    btnAI.textContent = aiEnabled ? 'AI：開' : 'AI：關';
+
+    if (!lastMove) lastMoveEl.textContent = '-';
+    else lastMoveEl.textContent = `${lastMove.color===BLACK?'B':'W'} ${fmtRC(lastMove.r,lastMove.c)}`;
+
+    if (scoringMode){
+      modePill.textContent = '終局計分';
+      modePill.style.background = 'rgba(239,68,68,.14)';
+      modePill.style.borderColor = 'rgba(239,68,68,.40)';
+    } else if (gameOver){
+      modePill.textContent = '已結束';
+      modePill.style.background = 'rgba(239,68,68,.14)';
+      modePill.style.borderColor = 'rgba(239,68,68,.40)';
+    } else {
+      modePill.textContent = '對局中';
+      modePill.style.background = 'rgba(245,158,11,.12)';
+      modePill.style.borderColor = 'rgba(245,158,11,.35)';
     }
 
-    end() {
-        this.gameOver = true;
-        let b = 0, w = 0, vis = new Set();
-        for(let r=0; r<9; r++) for(let c=0; c<9; c++) {
-            if (this.board[r][c] === 1) b++;
-            else if (this.board[r][c] === -1) w++;
-            else if (!vis.has(`${r},${c}`)) {
-                const area = this.scanArea(r, c, vis);
-                if (area.owner === 1) b += area.size; else if (area.owner === -1) w += area.size;
-            }
-        }
-        const win = b > w ? `黑勝 ${b-w} 子` : (w > b ? `白勝 ${w-b} 子` : "平手");
-        document.getElementById('msg').innerText = "結算：" + win;
-        alert(`終局決算\n黑: ${b} | 白: ${w}\n${win}`);
+    if (!gameOver && !scoringMode){
+      const who = (current===BLACK) ? '🖤 輪到你（黑）' : '⚪ 電腦回合（白）';
+      const legal = hasAnyLegalMove(current);
+
+      // 若當前無合法著手，依題意可判定禁著點導致自動 pass，並可能終局
+      if (!legal){
+        setStatus(`${who}<br><span class="badge">無合法著手 → 自動 Pass</span>`);
+        setTimeout(() => doPass(true), 450);
+      } else {
+        setStatus(`${who}<br><span class="badge">點棋盤交叉點落子</span>`);
+      }
     }
 
-    scanArea(r, c, gV) {
-        let size = 0, owners = new Set(), q = [[r,c]], lV = new Set();
-        while(q.length > 0) {
-            const [cr, cc] = q.pop();
-            if (lV.has(`${cr},${cc}`)) continue;
-            lV.add(`${cr},${cc}`); gV.add(`${cr},${cc}`); size++;
-            this.getAdjs(cr, cc).forEach(([nr, nc]) => {
-                if (this.board[nr][nc] === 0) q.push([nr, nc]);
-                else owners.add(this.board[nr][nc]);
-            });
-        }
-        return { size, owner: owners.size === 1 ? Array.from(owners)[0] : 0 };
+    if (scoringMode){
+      const s = computeAreaScore(board, dead);
+      const w = (s.black > s.white) ? '🖤 黑勝' : (s.white > s.black) ? '⚪ 白勝' : '平手';
+      setStatus(`
+        <div style="font-weight:800; font-size:16px">終局計分（簡化）</div>
+        <div class="small" style="margin-top:6px">
+          1) 先用滑鼠點棋子「棋串」標成<span style="color:#ef4444;font-weight:800">死子</span>（會打叉）<br>
+          2) 右下角比分會即時更新<br>
+          3) 若你覺得不用標，直接看結果即可
+        </div>
+        <div style="margin-top:10px">
+          <span class="badge">黑：${s.black}</span>
+          <span class="badge">白：${s.white}</span>
+          <span class="badge" style="margin-left:6px">${w}</span>
+        </div>
+        <div class="small" style="margin-top:8px;color:#fbbf24">
+          ※ 這裡的「活棋判斷」採用：由你手動標死子，避免程式誤判。
+        </div>
+      `);
+    }
+  }
+
+  // =========================
+  // 8) 下棋 / Pass / 終局
+  // =========================
+  function doMove(r,c){
+    if (gameOver) return;
+
+    if (board[r][c] !== EMPTY) return;
+
+    const sim = playOnBoard(board, r, c, current);
+    if (sim.suicide){
+      flashMsg('❌ 自殺禁手：此處下子會沒有氣，且沒有提到對手子。');
+      return;
     }
 
-    render() {
-        const cells = document.querySelectorAll('.cell');
-        cells.forEach((cell, i) => {
-            const r = Math.floor(i/9), c = i%9, v = this.board[r][c];
-            cell.innerHTML = v !== 0 ? `<div class="stone ${v===1?'black':'white'}"></div>` : '';
-        });
-        document.getElementById('msg').innerText = this.turn === 1 ? "黑棋回合" : "白棋回合";
-        let bc = 0, wc = 0;
-        this.board.flat().forEach(v => { if(v===1) bc++; if(v===-1) wc++; });
-        document.getElementById('bS').innerText = bc; document.getElementById('wS').innerText = wc;
+    // Ko：禁止回到上一手局面（簡化）
+    const nextKey = boardToKey(sim.nextBoard);
+    if (nextKey === koBannedKey){
+      flashMsg('❌ 打劫（Ko）禁手：不可立即回到上一手局面。');
+      return;
     }
-}
 
-let game;
-window.onload = () => { game = new GoCore(); };
-function toggleAI() {
-    game.aiEnabled = !game.aiEnabled;
-    document.getElementById('aiBtn').innerText = `AI: ${game.aiEnabled ? '開' : '關'}`;
-}
+    // ✅ 成功落子
+    const prevPosKey = boardToKey(board); // 用來給下一手做 koBannedKey
+    board = sim.nextBoard;
+
+    // 記錄提子
+    if (sim.capturedCount){
+      if (current === BLACK) capturesBlack += sim.capturedCount;
+      else capturesWhite += sim.capturedCount;
+    }
+
+    // 叫吃提示（看對手是否有某串只剩 1 氣）
+    const atariOpp = countAtari(board, -current);
+
+    lastMove = { r, c, color: current };
+    consecutivePasses = 0;
+
+    // 更新 Ko 禁手 key
+    koBannedKey = prevPosKey;
+
+    // 換手
+    current = -current;
+
+    pushHistory();
+    render();
+    updateUI();
+
+    if (atariOpp > 0){
+      flashMsg(`⚠️ 叫吃提示：對手有 ${atariOpp} 串只剩 1 口氣。`);
+    }
+
+    // AI 行動
+    if (!gameOver && aiEnabled && current === WHITE){
+      setTimeout(aiTurn, 450);
+    }
+  }
+
+  function doPass(auto=false){
+    if (gameOver) return;
+
+    consecutivePasses++;
+
+    // 若雙方連續 pass 兩次 → 進入計分
+    if (consecutivePasses >= 2){
+      enterScoringMode('✅ 雙方連續 Pass 兩次 → 終局計分');
+      return;
+    }
+
+    // 若雙方都沒有合法著手 → 直接終局計分
+    const meHas = hasAnyLegalMove(current);
+    const oppHas = hasAnyLegalMove(-current);
+    if (!meHas && !oppHas){
+      enterScoringMode('✅ 雙方皆無合法著手（全禁著點）→ 終局計分');
+      return;
+    }
+
+    // 換手
+    current = -current;
+
+    pushHistory();
+    render();
+    updateUI();
+
+    if (!auto){
+      flashMsg('⏭️ Pass。');
+    }
+
+    if (aiEnabled && current === WHITE){
+      setTimeout(aiTurn, 450);
+    }
+  }
+
+  function enterScoringMode(reason){
+    gameOver = true;
+    scoringMode = true;
+    flashMsg(reason);
+
+    // 計分模式：允許點擊棋串標死子
+    updateUI();
+    render();
+  }
+
+  function aiTurn(){
+    if (gameOver || scoringMode) return;
+    if (current !== WHITE) return;
+
+    const moves = allLegalMoves(board, WHITE, koBannedKey);
+    if (moves.length === 0){
+      doPass(true);
+      return;
+    }
+
+    // 選最高分
+    let best = null;
+    let bestS = -1e18;
+    for (const m of moves){
+      const s = scoreMove(board, m.r, m.c, WHITE);
+      if (s > bestS){
+        bestS = s;
+        best = m;
+      }
+    }
+
+    if (!best){
+      doPass(true);
+      return;
+    }
+
+    doMove(best.r, best.c);
+  }
+
+  function flashMsg(msg){
+    // 短暫訊息：疊在 status 下方
+    const old = statusEl.innerHTML;
+    statusEl.innerHTML = old + `<div style="margin-top:8px;color:#fbbf24;font-weight:700">${msg}</div>`;
+    setTimeout(() => updateUI(), 1100);
+  }
+
+  // =========================
+  // 9) 計分模式：點棋串切換死活
+  // =========================
+  function toggleDeadGroup(r,c){
+    if (!scoringMode) return;
+    if (board[r][c] === EMPTY) return;
+
+    const g = getGroup(board, r, c);
+    // 若這串裡任一子已被標死，視為整串 currentlyDead=true
+    let currentlyDead = false;
+    for (const [sr,sc] of g.stones){
+      if (dead[sr][sc]) { currentlyDead = true; break; }
+    }
+    const newVal = !currentlyDead;
+    for (const [sr,sc] of g.stones){
+      dead[sr][sc] = newVal;
+    }
+    render();
+    updateUI();
+  }
+
+  // =========================
+  // 10) 事件
+  // =========================
+  canvas.addEventListener('click', (ev) => {
+    const rect = canvas.getBoundingClientRect();
+    const x = (ev.clientX - rect.left) * (canvas.width / rect.width);
+    const y = (ev.clientY - rect.top) * (canvas.height / rect.height);
+
+    const rc = xyToRC(x,y);
+    if (!rc) return;
+
+    if (scoringMode){
+      toggleDeadGroup(rc.r, rc.c);
+      return;
+    }
+
+    // 對局中：只有黑棋（使用者）可點
+    if (current !== BLACK) return;
+    doMove(rc.r, rc.c);
+  });
+
+  btnPass.addEventListener('click', () => doPass(false));
+  btnUndo.addEventListener('click', () => popHistory());
+  btnNew.addEventListener('click', () => resetGame());
+  btnAI.addEventListener('click', () => { aiEnabled = !aiEnabled; updateUI(); if (aiEnabled && current===WHITE && !gameOver) setTimeout(aiTurn, 350); });
+  btnHelp.addEventListener('click', () => {
+    alert(
+`九路圍棋（簡化版）規則提示
+1) 黑先白後（白由電腦下）
+2) 落子在交叉點（格線交叉處）
+3) 提子：對手棋串無氣會被拿掉
+4) 禁著點：
+   - 自殺禁手（下完自己那串沒氣且沒有提子）
+   - 簡化 Ko：禁止「立即」回到上一手局面
+5) 終局：
+   - 雙方連續 Pass 兩次
+   - 或雙方都無合法著手（全禁著點）
+6) 終局決算（簡化）：
+   - 你可以點棋串標「死子」（打紅叉）
+   - 會把死子移除後，用面積制（子數+圍地）算分`
+    );
+  });
+
+  // =========================
+  // 11) 啟動
+  // =========================
+  resetGame();
+
+})();
 </script>
 </body>
 </html>
