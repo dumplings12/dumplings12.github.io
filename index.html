@@ -12,85 +12,44 @@
         body {
             font-family: 'Arial', sans-serif;
             background: linear-gradient(135deg, #2c3e50, #34495e);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            color: #fff;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; margin: 0; color: #fff;
         }
         .game-container {
-            text-align: center;
-            background: rgba(0,0,0,0.85);
-            padding: 25px;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+            text-align: center; background: rgba(0,0,0,0.85);
+            padding: 25px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.6);
         }
         h1 { margin: 10px 0; color: #f39c12; }
-        .status {
-            font-size: 1.1em;
-            margin: 10px 0;
-            color: #f1c40f;
-            min-height: 1.5em;
-        }
+        .status { font-size: 1.1em; margin: 10px 0; color: #f1c40f; min-height: 1.5em; }
 
-        /* 棋盤主體 */
         .board-container {
-            position: relative;
-            width: 450px;
-            height: 450px;
-            background: var(--board-bg);
-            margin: 20px auto;
-            border: 2px solid #5d4037;
+            position: relative; width: 450px; height: 450px;
+            background: var(--board-bg); margin: 20px auto; border: 2px solid #5d4037;
         }
-
-        /* 繪製固定格線 */
         .grid-layer {
-            position: absolute;
-            top: 25px; left: 25px;
-            width: 400px; height: 400px;
-            display: grid;
-            grid-template-columns: repeat(8, 1fr);
-            grid-template-rows: repeat(8, 1fr);
+            position: absolute; top: 25px; left: 25px;
+            width: 400px; height: 400px; display: grid;
+            grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr);
             pointer-events: none;
         }
         .grid-box { border: 1px solid var(--line-color); box-sizing: border-box; }
 
-        /* 固定星位 (小黑點) - 絕對定位於背景 */
         .hoshi {
-            position: absolute;
-            width: 8px; height: 8px;
-            background: var(--line-color);
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 1;
+            position: absolute; width: 8px; height: 8px; background: var(--line-color);
+            border-radius: 50%; transform: translate(-50%, -50%); z-index: 1; pointer-events: none;
         }
 
-        /* 交叉點感應層 - 9x9 佈局 */
         .intersection-layer {
-            position: absolute;
-            top: 0; left: 0;
-            width: 450px; height: 450px;
-            display: grid;
-            grid-template-columns: repeat(9, 1fr);
-            grid-template-rows: repeat(9, 1fr);
+            position: absolute; top: 0; left: 0; width: 450px; height: 450px;
+            display: grid; grid-template-columns: repeat(9, 1fr); grid-template-rows: repeat(9, 1fr);
             z-index: 10;
         }
         .point {
-            width: 50px; height: 50px;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
+            width: 50px; height: 50px; cursor: pointer;
+            display: flex; justify-content: center; align-items: center; position: relative;
         }
-
-        /* 棋子樣式 */
         .stone {
-            width: 42px; height: 42px;
-            border-radius: 50%;
-            z-index: 5;
-            pointer-events: none; /* 防止棋子擋住點擊事件 */
+            width: 42px; height: 42px; border-radius: 50%; z-index: 5; pointer-events: none;
         }
         .black { background: radial-gradient(circle at 30% 30%, #444, #000); box-shadow: 1px 2px 4px rgba(0,0,0,0.6); }
         .white { background: radial-gradient(circle at 30% 30%, #fff, #bbb); box-shadow: 1px 2px 4px rgba(0,0,0,0.4); }
@@ -98,8 +57,7 @@
         .controls { margin-top: 15px; }
         button {
             padding: 8px 18px; margin: 5px; cursor: pointer;
-            background: #3498db; color: white; border: none; border-radius: 5px;
-            font-size: 14px;
+            background: #3498db; color: white; border: none; border-radius: 5px; font-size: 14px;
         }
         button:hover { background: #2980b9; }
         .score-info { margin-top: 10px; font-size: 1.1em; color: #bdc3c7; }
@@ -109,7 +67,7 @@
 
 <div class="game-container">
     <h1>11XXXXX - FinalTerm</h1>
-    <div class="status" id="status">黑棋回合</div>
+    <div class="status" id="status">遊戲準備中...</div>
     
     <div class="board-container" id="mainBoard">
         <div class="grid-layer" id="gridLines"></div>
@@ -122,8 +80,8 @@
 
     <div class="controls">
         <button onclick="location.reload()">新局</button>
-        <button onclick="game.pass()">讓子 (Pass)</button>
-        <button onclick="game.undo()">悔棋</button>
+        <button id="passBtn" onclick="game.pass()">讓子 (Pass)</button>
+        <button id="undoBtn" onclick="game.undo()">悔棋</button>
         <button id="aiBtn" onclick="toggleAI()">AI開關 (開)</button>
     </div>
 </div>
@@ -133,7 +91,7 @@ class GoGame {
     constructor() {
         this.board = Array(9).fill().map(() => Array(9).fill(0));
         this.history = [];
-        this.currentPlayer = 1; 
+        this.currentPlayer = 1; // 1: 黑, -1: 白
         this.aiEnabled = true;
         this.passCount = 0;
         this.gameOver = false;
@@ -143,9 +101,9 @@ class GoGame {
 
     initDOM() {
         const grid = document.getElementById('gridLines');
+        grid.innerHTML = '';
         for(let i=0; i<64; i++) grid.innerHTML += '<div class="grid-box"></div>';
 
-        // 生成固定星位
         const boardCont = document.getElementById('mainBoard');
         const pos = [2, 4, 6];
         pos.forEach(r => pos.forEach(c => {
@@ -159,6 +117,7 @@ class GoGame {
         }));
 
         const layer = document.getElementById('intersections');
+        layer.innerHTML = '';
         for(let r=0; r<9; r++) {
             for(let c=0; c<9; c++) {
                 const pt = document.createElement('div');
@@ -172,7 +131,7 @@ class GoGame {
     handlePlay(r, c) {
         if (this.gameOver || (this.currentPlayer === -1 && this.aiEnabled)) return;
         if (this.play(r, c, 1)) {
-            this.passCount = 0;
+            this.passCount = 0; // 只要有落子，讓子計數歸零
             if (this.aiEnabled && !this.gameOver) {
                 setTimeout(() => this.aiMove(), 500);
             }
@@ -185,23 +144,23 @@ class GoGame {
         const backup = JSON.parse(JSON.stringify(this.board));
         this.board[r][c] = player;
         
-        let anyCapture = false;
-        // 1. 檢查四周對手棋塊是否被提子
+        let capturedAny = false;
+        // 1. 檢查周圍對手是否被提子
         this.getNeighbors(r, c).forEach(([nr, nc]) => {
             if (this.board[nr][nc] === -player) {
                 const group = this.findGroup(nr, nc);
                 if (this.countLiberties(group) === 0) {
                     group.forEach(([gr, gc]) => this.board[gr][gc] = 0);
-                    anyCapture = true;
+                    capturedAny = true;
                 }
             }
         });
 
-        // 2. 禁著點判定：若沒提子且自己落子後也沒氣，則是自殺
+        // 2. 禁著點判定
         const myGroup = this.findGroup(r, c);
-        if (!anyCapture && this.countLiberties(myGroup) === 0) {
+        if (!capturedAny && this.countLiberties(myGroup) === 0) {
             this.board = backup;
-            if (player === 1) alert("禁著點！");
+            if (player === 1) alert("禁著點：此處無氣且無法提子！");
             return false;
         }
 
@@ -211,7 +170,6 @@ class GoGame {
         return true;
     }
 
-    // 尋找相連棋塊 (正確的提子必須針對整個棋塊)
     findGroup(r, c) {
         const color = this.board[r][c];
         const group = [];
@@ -231,37 +189,39 @@ class GoGame {
         return group;
     }
 
-    // 計算棋塊整體的氣
     countLiberties(group) {
-        const libs = new Set();
+        const liberties = new Set();
         group.forEach(([r, c]) => {
             this.getNeighbors(r, c).forEach(([nr, nc]) => {
-                if (this.board[nr][nc] === 0) libs.add(`${nr},${nc}`);
+                if (this.board[nr][nc] === 0) {
+                    liberties.add(`${nr},${nc}`);
+                }
             });
         });
-        return libs.size;
+        return liberties.size;
     }
 
     aiMove() {
-        let validMoves = [];
+        if (this.gameOver) return;
+        let moves = [];
         for(let r=0; r<9; r++) {
             for(let c=0; c<9; c++) {
-                if (this.isMoveLegal(r, c, -1)) validMoves.push([r, c]);
+                if (this.isLegal(r, c, -1)) moves.push([r, c]);
             }
         }
-        if (validMoves.length > 0) {
-            const [r, c] = validMoves[Math.floor(Math.random() * validMoves.length)];
+        if (moves.length > 0) {
+            const [r, c] = moves[Math.floor(Math.random() * moves.length)];
             this.play(r, c, -1);
+            this.passCount = 0;
         } else {
-            this.pass();
+            this.pass(); // AI 無處可走則讓子
         }
     }
 
-    isMoveLegal(r, c, p) {
+    isLegal(r, c, p) {
         if (this.board[r][c] !== 0) return false;
         const temp = JSON.parse(JSON.stringify(this.board));
         temp[r][c] = p;
-        // 模擬提子
         let canCap = false;
         this.getNeighbors(r, c).forEach(([nr, nc]) => {
             if (temp[nr][nc] === -p) {
@@ -270,17 +230,14 @@ class GoGame {
             }
         });
         if (canCap) return true;
-        // 檢查是否有氣
         const myGroup = this.findGroupSim(r, c, temp);
         return this.countLibertiesSim(myGroup, temp) > 0;
     }
 
-    // AI 用的模擬函數
     findGroupSim(r, c, b) {
         const color = b[r][c], group = [], queue = [[r, c]], visited = new Set([`${r},${c}`]);
         while(queue.length > 0) {
-            const [currR, currC] = queue.shift();
-            group.push([currR, currC]);
+            const [currR, currC] = queue.shift(); group.push([currR, currC]);
             this.getNeighbors(currR, currC).forEach(([nr, nc]) => {
                 if(b[nr][nc] === color && !visited.has(`${nr},${nc}`)) {
                     visited.add(`${nr},${nc}`); queue.push([nr, nc]);
@@ -296,19 +253,23 @@ class GoGame {
     }
 
     pass() {
+        if (this.gameOver) return;
         this.passCount++;
-        if (this.passCount >= 2) this.endGame();
-        else {
-            this.currentPlayer = -this.currentPlayer;
-            this.updateUI();
-            if (this.currentPlayer === -1 && this.aiEnabled) setTimeout(() => this.aiMove(), 500);
+        this.currentPlayer = -this.currentPlayer;
+        this.updateUI();
+        
+        if (this.passCount >= 2) {
+            this.endGame();
+        } else if (this.currentPlayer === -1 && this.aiEnabled) {
+            setTimeout(() => this.aiMove(), 500);
         }
     }
 
     undo() {
-        if (this.history.length > 0) {
+        if (this.history.length > 0 && !this.gameOver) {
             this.board = this.history.pop();
             this.currentPlayer = 1;
+            this.passCount = 0;
             this.updateUI();
         }
     }
@@ -316,7 +277,6 @@ class GoGame {
     endGame() {
         this.gameOver = true;
         let b = 0, w = 0, visited = new Set();
-        // 子空皆地結算
         for (let r=0; r<9; r++) {
             for (let c=0; c<9; c++) {
                 if (this.board[r][c] === 1) b++;
@@ -328,7 +288,7 @@ class GoGame {
                 }
             }
         }
-        const win = b > w ? `黑勝 ${b-w} 子` : `白勝 ${w-b} 子`;
+        const win = b > w ? `黑勝 ${b-w} 子` : (w > b ? `白勝 ${w-b} 子` : "平手");
         document.getElementById('status').innerText = "遊戲結束: " + win;
         alert(`終局結算\n黑: ${b} | 白: ${w}\n結果: ${win}`);
     }
@@ -371,6 +331,7 @@ class GoGame {
         return [[r-1,c],[r+1,c],[r,c-1],[r,c+1]].filter(([nr,nc]) => nr>=0 && nr<9 && nc>=0 && nc<9);
     }
 }
+
 let game;
 window.onload = () => { game = new GoGame(); };
 function toggleAI() {
