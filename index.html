@@ -1,33 +1,32 @@
-<!doctype html>
-<html lang="zh-Hant">
+<!DOCTYPE html>
+<html lang="zh-TW">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>1082922-HW10</title>
-    <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>11XXXXX - FinalTerm</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <main class="container">
-        <h1>黑白棋</h1>
-        <section class="controls">
-            <div class="status">輪到：<span id="currentPlayer">黑</span></div>
-            <div class="score">黑：<span id="blackScore">2</span> 白：<span id="whiteScore">2</span></div>
-        </section>
-        <section class="ai-settings" style="margin-bottom: 15px; text-align: center; display: flex; justify-content: center; gap: 10px; align-items: center;">
-            <label for="difficulty">白棋難度：</label>
-            <select id="difficulty" style="padding: 5px; border-radius: 4px;">
-                <option value="basic">基本 </option>
-                <option value="advanced" selected>進階 </option>
-            </select>
-            <button id="restartBtn">重新開始</button>
-        </section>
-        <section class="board-wrap">
-            <div id="board" class="board"></div>
-        </section>
-        <section class="legend">
-            <p>提示：你是黑棋。</p>
-        </section>
-    </main>
+
+    <div class="container">
+        <h1>🎯 九路圍棋電腦對戰</h1>
+        <div id="status">黑棋（玩家）先手</div>
+        
+        <div class="board" id="go-board">
+            <div id="grid-background"></div>
+            <div class="intersection-layer" id="intersections"></div>
+        </div>
+
+        <div class="info">
+            🖤 黑棋 (子數): <span id="black-score">0</span> | ⚪ 白棋 (子數): <span id="white-score">0</span>
+        </div>
+
+        <div class="controls">
+            <button class="btn-pass" onclick="game.pass()">虛手 (Pass)</button>
+            <button class="btn-reset" onclick="location.reload()">重新開始</button>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>
