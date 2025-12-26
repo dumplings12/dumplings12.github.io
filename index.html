@@ -2,207 +2,212 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>九路圍棋 v10.0.Ultimate_Fix</title>
+    <title>九路圍棋 v11.0 穩定版</title>
     <style>
-        :root { --board: #DEB887; --line: #333; }
-        body { font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; background: #1a1a2e; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; color: #fff; }
-        .container { text-align: center; background: #16213e; padding: 25px; border-radius: 15px; box-shadow: 0 0 30px rgba(0,0,0,0.7); }
-        .status { font-size: 1.4em; margin-bottom: 15px; color: #e94560; font-weight: bold; min-height: 1.5em; }
-        .board { position: relative; width: 450px; height: 450px; background: var(--board); margin: 0 auto; border: 4px solid #53354a; }
+        :root { --bg: #DEB887; --line: #444; }
+        body { font-family: "Microsoft JhengHei", sans-serif; background: #2c3e50; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; color: #fff; }
+        .container { text-align: center; background: #34495e; padding: 30px; border-radius: 15px; box-shadow: 0 10px 50px rgba(0,0,0,0.5); }
+        .status { font-size: 1.5em; margin-bottom: 20px; color: #f1c40f; font-weight: bold; min-height: 1.6em; }
+        .board { position: relative; width: 450px; height: 450px; background: var(--bg); margin: 0 auto; border: 4px solid #5d4037; cursor: pointer; }
         .grid { position: absolute; top: 25px; left: 25px; width: 400px; height: 400px; display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); pointer-events: none; }
         .grid div { border: 1px solid var(--line); }
-        .hoshi { position: absolute; width: 8px; height: 8px; background: var(--line); border-radius: 50%; transform: translate(-50%, -50%); z-index: 1; pointer-events: none; }
+        .hoshi { position: absolute; width: 8px; height: 8px; background: var(--line); border-radius: 50%; transform: translate(-50%, -50%); z-index: 1; }
         .layer { position: absolute; top: 0; left: 0; width: 450px; height: 450px; display: grid; grid-template-columns: repeat(9, 1fr); grid-template-rows: repeat(9, 1fr); z-index: 10; }
-        .cell { width: 50px; height: 50px; cursor: pointer; display: flex; justify-content: center; align-items: center; }
-        .stone { width: 44px; height: 44px; border-radius: 50%; z-index: 5; box-shadow: 0 4px 8px rgba(0,0,0,0.5); pointer-events: none; }
+        .cell { display: flex; justify-content: center; align-items: center; }
+        .stone { width: 44px; height: 44px; border-radius: 50%; z-index: 5; box-shadow: 0 4px 8px rgba(0,0,0,0.4); }
         .black { background: radial-gradient(circle at 30% 30%, #444, #000); }
         .white { background: radial-gradient(circle at 30% 30%, #fff, #bbb); }
-        .btns { margin-top: 20px; }
-        button { padding: 10px 20px; margin: 5px; cursor: pointer; border-radius: 5px; border: none; font-weight: bold; background: #0f3460; color: white; transition: 0.3s; }
-        button:hover { background: #e94560; }
-        .btn-pass { background: #e67e22; }
-        .score-info { margin-top: 15px; font-size: 1.1em; color: #95a5a6; }
+        .btns { margin-top: 25px; }
+        button { padding: 12px 24px; margin: 5px; cursor: pointer; border-radius: 6px; border: none; font-weight: bold; transition: 0.2s; background: #3498db; color: white; }
+        button:hover { filter: brightness(1.2); transform: scale(1.05); }
+        .btn-warn { background: #e67e22; }
+        .score { margin-top: 15px; font-size: 1.2em; opacity: 0.9; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>九路圍棋 v10.0</h1>
-    <div class="status" id="msg">黑棋回合</div>
-    <div class="board" id="boardMain">
-        <div class="grid" id="bgGrid"></div>
-        <div class="layer" id="uiLayer"></div>
+    <div class="status" id="status">黑棋回合</div>
+    <div class="board" id="boardBox">
+        <div class="grid" id="gridBg"></div>
+        <div class="layer" id="clickLayer"></div>
     </div>
-    <div class="score-info">黑子: <span id="bS">0</span> | 白子: <span id="wS">0</span></div>
+    <div class="score">黑子: <span id="bS">0</span> | 白子: <span id="wS">0</span></div>
     <div class="btns">
         <button onclick="location.reload()">重新開始</button>
-        <button class="btn-pass" onclick="game.pass()">讓子 (Pass)</button>
-        <button onclick="game.undo()">悔棋</button>
+        <button class="btn-warn" id="passBtn" onclick="game.doPass()">讓子 (Pass)</button>
+        <button onclick="game.doUndo()">悔棋</button>
         <button id="aiBtn" onclick="toggleAI()">AI: 開</button>
     </div>
 </div>
 
 <script>
-class GoGame {
+class GoLogic {
     constructor() {
         this.board = Array(9).fill().map(() => Array(9).fill(0));
         this.history = [];
         this.turn = 1; // 1:黑, -1:白
-        this.aiOn = true;
+        this.aiActive = true;
         this.passCount = 0;
-        this.isOver = false;
-        this.init();
+        this.gameOver = false;
+        this.initDOM();
     }
 
-    init() {
-        const bg = document.getElementById('bgGrid');
+    initDOM() {
+        const bg = document.getElementById('gridBg');
         for(let i=0; i<64; i++) bg.innerHTML += '<div></div>';
         [[2,2],[2,6],[4,4],[6,2],[6,6]].forEach(p => {
-            const h = document.createElement('div');
-            h.className = 'hoshi';
+            const h = document.createElement('div'); h.className = 'hoshi';
             h.style.top = (p[0]*50+25)+'px'; h.style.left = (p[1]*50+25)+'px';
-            document.getElementById('boardMain').appendChild(h);
+            document.getElementById('boardBox').appendChild(h);
         });
-        const layer = document.getElementById('uiLayer');
+        const layer = document.getElementById('clickLayer');
         for(let r=0; r<9; r++) for(let c=0; c<9; c++) {
-            const d = document.createElement('div');
-            d.className = 'cell'; d.onclick = () => this.onClick(r, c);
-            layer.appendChild(d);
+            const cell = document.createElement('div');
+            cell.className = 'cell'; cell.onclick = () => this.handlePlayer(r, c);
+            layer.appendChild(cell);
         }
-        this.update();
+        this.render();
     }
 
-    onClick(r, c) {
-        if (this.isOver || (this.aiOn && this.turn === -1)) return;
-        if (this.attemptMove(r, c, this.turn)) {
+    handlePlayer(r, c) {
+        if (this.gameOver || (this.aiActive && this.turn === -1)) return;
+        if (this.executeMove(r, c, this.turn)) {
             this.passCount = 0;
-            if (this.aiOn && !this.isOver) setTimeout(() => this.aiMove(), 600);
+            if (this.aiActive && !this.gameOver) setTimeout(() => this.executeAI(), 600);
         }
     }
 
-    // 關鍵：模擬落子引擎
-    attemptMove(r, c, p) {
+    executeMove(r, c, p) {
         if (this.board[r][c] !== 0) return false;
 
-        // 建立沙盒
-        let sandbox = JSON.parse(JSON.stringify(this.board));
-        sandbox[r][c] = p;
+        // --- 沙盒模擬開始 ---
+        let nextBoard = JSON.parse(JSON.stringify(this.board));
+        nextBoard[r][c] = p;
 
-        // 1. 檢查四周對手棋塊是否被提子
-        let captureCount = 0;
-        this.getNeighbors(r, c).forEach(([nr, nc]) => {
-            if (sandbox[nr][nc] === -p) {
-                const group = this.findGroup(nr, nc, sandbox);
-                if (this.checkLiberties(group, sandbox) === 0) {
-                    group.forEach(([gr, gc]) => { sandbox[gr][gc] = 0; captureCount++; });
+        let captureHappened = false;
+        // 檢查四周敵軍
+        this.getAdj(r, c).forEach(([nr, nc]) => {
+            if (nextBoard[nr][nc] === -p) {
+                const group = this.getGroup(nr, nc, nextBoard);
+                if (this.getLiberties(group, nextBoard) === 0) {
+                    group.forEach(([gr, gc]) => nextBoard[gr][gc] = 0);
+                    captureHappened = true;
                 }
             }
         });
 
-        // 2. 檢查自己是否有氣（包含提子後騰出的氣）
-        const myGroup = this.findGroup(r, c, sandbox);
-        if (this.checkLiberties(myGroup, sandbox) === 0) {
-            if (!this.aiOn || p === 1) alert("禁著點！這步棋沒氣且無法提子。");
+        // 檢查自己（自殺步判定）
+        const myGroup = this.getGroup(r, c, nextBoard);
+        if (this.getLiberties(myGroup, nextBoard) === 0) {
+            if (p === 1 || !this.aiActive) alert("禁著點！此處落子將導致自己沒氣被提。");
             return false;
         }
+        // --- 沙盒模擬通過 ---
 
-        // 通過所有規則，提交沙盒
         this.history.push(JSON.parse(JSON.stringify(this.board)));
-        this.board = sandbox;
+        this.board = nextBoard;
         this.turn = -p;
-        this.update();
+        this.render();
         return true;
     }
 
-    getNeighbors(r, c) {
+    getAdj(r, c) {
         return [[r-1,c],[r+1,c],[r,c-1],[r,c+1]].filter(([y,x]) => y>=0 && y<9 && x>=0 && x<9);
     }
 
-    findGroup(r, c, b) {
-        const color = b[r][c], group = [], queue = [[r,c]], vis = new Set([`${r},${c}`]);
+    getGroup(r, c, b) {
+        const color = b[r][c], group = [], queue = [[r,c]], visited = new Set([`${r},${c}`]);
         while(queue.length > 0) {
-            const [cr, cc] = queue.shift(); group.push([cr, cc]);
-            this.getNeighbors(cr, cc).forEach(([nr,nc]) => {
-                if(b[nr][nc] === color && !vis.has(`${nr},${nc}`)) { vis.add(`${nr},${nc}`); queue.push([nr, nc]); }
+            const [cr, cc] = queue.shift();
+            group.push([cr, cc]);
+            this.getAdj(cr, cc).forEach(([nr, nc]) => {
+                if (b[nr][nc] === color && !visited.has(`${nr},${nc}`)) {
+                    visited.add(`${nr},${nc}`); queue.push([nr, nc]);
+                }
             });
         }
         return group;
     }
 
-    checkLiberties(group, b) {
+    getLiberties(group, b) {
         const libs = new Set();
-        group.forEach(([r, c]) => this.getNeighbors(r, c).forEach(([nr, nc]) => { if(b[nr][nc] === 0) libs.add(`${nr},${nc}`); }));
+        group.forEach(([r, c]) => {
+            this.getAdj(r, c).forEach(([nr, nc]) => {
+                if (b[nr][nc] === 0) libs.add(`${nr},${nc}`);
+            });
+        });
         return libs.size;
     }
 
-    aiMove() {
-        if (this.isOver) return;
+    executeAI() {
+        if (this.gameOver) return;
         let moves = [];
         for(let r=0; r<9; r++) for(let c=0; c<9; c++) {
             if (this.board[r][c] === 0) {
-                let weight = this.evaluate(r, c);
-                if (weight > -1) moves.push({r, c, weight});
+                let s = this.aiEvaluate(r, c);
+                if (s > -1) moves.push({r, c, s});
             }
         }
         if (moves.length > 0) {
-            moves.sort((a, b) => b.weight - a.weight);
-            this.attemptMove(moves[0].r, moves[0].c, -1);
+            moves.sort((a, b) => b.s - a.s);
+            this.executeMove(moves[0].r, moves[0].c, -1);
             this.passCount = 0;
         } else {
-            this.pass(); // AI 無處可走即讓步
+            this.doPass(); // AI 判斷無處可走時讓步
         }
     }
 
-    evaluate(r, c) {
+    aiEvaluate(r, c) {
         let b = JSON.parse(JSON.stringify(this.board));
         b[r][c] = -1;
-        let score = 0, canKill = false;
-        this.getNeighbors(r, c).forEach(([nr, nc]) => {
+        let score = 0;
+        this.getAdj(r, c).forEach(([nr, nc]) => {
             if (b[nr][nc] === 1) {
-                const g = this.findGroup(nr, nc, b);
-                if (this.checkLiberties(g, b) === 0) { score += (10 + g.length); canKill = true; }
+                const g = this.getGroup(nr, nc, b);
+                if (this.getLiberties(g, b) === 0) score += (g.length * 10);
             }
         });
-        const myG = this.findGroup(r, c, b);
-        if (this.checkLiberties(myG, b) === 0 && !canKill) return -1; // 避開自殺
+        const myG = this.getGroup(r, c, b);
+        if (this.getLiberties(myG, b) === 0) return -1; // 避開自殺
         return score + Math.random();
     }
 
-    pass() {
+    doPass() {
         this.passCount++;
         this.turn = -this.turn;
-        this.update();
+        this.render();
         if (this.passCount >= 2) {
-            this.finish();
-        } else if (this.aiOn && this.turn === -1) {
-            setTimeout(() => this.aiMove(), 600);
+            this.endGame();
+        } else if (this.aiActive && this.turn === -1) {
+            setTimeout(() => this.executeAI(), 600);
         }
     }
 
-    undo() {
+    doUndo() {
         if (this.history.length > 0) {
             this.board = this.history.pop();
-            this.turn = this.aiOn ? 1 : (this.turn === 1 ? -1 : 1);
-            this.isOver = false; this.passCount = 0;
-            this.update();
+            this.turn = this.aiActive ? 1 : (this.turn === 1 ? -1 : 1);
+            this.gameOver = false; this.passCount = 0;
+            this.render();
         }
     }
 
-    finish() {
-        this.isOver = true;
+    endGame() {
+        this.gameOver = true;
         let b = 0, w = 0, vis = new Set();
         for(let r=0; r<9; r++) for(let c=0; c<9; c++) {
             if (this.board[r][c] === 1) b++;
             else if (this.board[r][c] === -1) w++;
             else if (!vis.has(`${r},${c}`)) {
                 const area = this.scanArea(r, c, vis);
-                if (area.owner === 1) b += area.size; else if (area.owner === -1) w += area.size;
+                if (area.owner === 1) b += area.size;
+                else if (area.owner === -1) w += area.size;
             }
         }
         const win = b > w ? `黑勝 ${b-w} 子` : (w > b ? `白勝 ${w-b} 子` : "平手");
-        document.getElementById('msg').innerText = "結算：" + win;
-        alert(`終局統計\n黑: ${b} | 白: ${w}\n${win}`);
+        document.getElementById('status').innerText = "結算：" + win;
+        alert(`終局決算\n黑: ${b} | 白: ${w}\n${win}`);
     }
 
     scanArea(r, c, gV) {
@@ -211,21 +216,21 @@ class GoGame {
             const [cr, cc] = q.pop();
             if (lV.has(`${cr},${cc}`)) continue;
             lV.add(`${cr},${cc}`); gV.add(`${cr},${cc}`); size++;
-            this.getNeighbors(cr, cc).forEach(([nr,nc]) => {
-                if(this.board[nr][nc] === 0) q.push([nr,nc]);
+            this.getAdj(cr, cc).forEach(([nr, nc]) => {
+                if (this.board[nr][nc] === 0) q.push([nr, nc]);
                 else owners.add(this.board[nr][nc]);
             });
         }
         return { size, owner: owners.size === 1 ? Array.from(owners)[0] : 0 };
     }
 
-    update() {
+    render() {
         const cells = document.querySelectorAll('.cell');
         cells.forEach((cell, i) => {
             const r = Math.floor(i/9), c = i%9, v = this.board[r][c];
             cell.innerHTML = v !== 0 ? `<div class="stone ${v===1?'black':'white'}"></div>` : '';
         });
-        document.getElementById('msg').innerText = this.turn === 1 ? "黑棋回合" : "白棋回合";
+        document.getElementById('status').innerText = this.turn === 1 ? "黑棋回合" : "白棋回合";
         let bc = 0, wc = 0;
         this.board.flat().forEach(v => { if(v===1) bc++; if(v===-1) wc++; });
         document.getElementById('bS').innerText = bc; document.getElementById('wS').innerText = wc;
@@ -233,11 +238,11 @@ class GoGame {
 }
 
 let game;
-window.onload = () => { game = new GoGame(); };
+window.onload = () => { game = new GoLogic(); };
 function toggleAI() {
-    game.aiOn = !game.aiOn;
-    document.getElementById('aiBtn').innerText = `AI: ${game.aiOn ? '開' : '關'}`;
-    if (!game.aiOn) document.getElementById('msg').innerText = "手動模式";
+    game.aiActive = !game.aiActive;
+    document.getElementById('aiBtn').innerText = `AI: ${game.aiActive ? '開' : '關'}`;
+    if (!game.aiActive) document.getElementById('status').innerText = "雙人對弈模式";
 }
 </script>
 </body>
