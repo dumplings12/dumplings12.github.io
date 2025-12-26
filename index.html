@@ -201,6 +201,209 @@ class GoGame {
                 this.removeGroup(nr, nc);
                 captured = true;
             }
+        });<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>11XXXXX - FinalTerm</title>
+    <style>
+        :root {
+            --board-bg: #DEB887;
+            --line-color: #444;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            color: #fff;
+        }
+        .game-container {
+            text-align: center;
+            background: rgba(0,0,0,0.85);
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+        }
+        h1 { margin: 10px 0; color: #f39c12; }
+        .status {
+            font-size: 1.1em;
+            margin: 10px 0;
+            color: #f1c40f;
+            min-height: 1.5em;
+        }
+
+        /* 棋盤主體 */
+        .board-container {
+            position: relative;
+            width: 450px;
+            height: 450px;
+            background: var(--board-bg);
+            margin: 20px auto;
+            border: 2px solid #5d4037;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+
+        /* 繪製固定格線 */
+        .grid-layer {
+            position: absolute;
+            top: 25px; left: 25px;
+            width: 400px; height: 400px;
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            pointer-events: none;
+        }
+        .grid-box { border: 1px solid var(--line-color); box-sizing: border-box; }
+
+        /* 固定星位 (小黑點) */
+        .hoshi {
+            position: absolute;
+            width: 8px; height: 8px;
+            background: var(--line-color);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1;
+        }
+
+        /* 交叉點感應層 */
+        .intersection-layer {
+            position: absolute;
+            top: 0; left: 0;
+            width: 450px; height: 450px;
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            grid-template-rows: repeat(9, 1fr);
+            z-index: 10;
+        }
+        .point {
+            width: 50px; height: 50px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        /* 棋子樣式 */
+        .stone {
+            width: 42px; height: 42px;
+            border-radius: 50%;
+            z-index: 5;
+            transition: all 0.1s;
+        }
+        .black { background: radial-gradient(circle at 30% 30%, #444, #000); box-shadow: 1px 2px 4px rgba(0,0,0,0.6); }
+        .white { background: radial-gradient(circle at 30% 30%, #fff, #bbb); box-shadow: 1px 2px 4px rgba(0,0,0,0.4); }
+
+        .controls { margin-top: 15px; }
+        button {
+            padding: 8px 18px; margin: 5px; cursor: pointer;
+            background: #3498db; color: white; border: none; border-radius: 5px;
+            font-size: 14px; transition: 0.2s;
+        }
+        button:hover { background: #2980b9; }
+        .pass-btn { background: #e67e22; }
+        .pass-btn:hover { background: #d35400; }
+        
+        .score-info { margin-top: 10px; font-size: 1.1em; color: #bdc3c7; }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <h1>11XXXXX - FinalTerm</h1>
+    <div class="status" id="status">載入中...</div>
+    
+    <div class="board-container" id="mainBoard">
+        <div class="grid-layer" id="gridLines"></div>
+        <div class="intersection-layer" id="intersections"></div>
+        </div>
+
+    <div class="score-info">
+        黑子數: <span id="blackScore">0</span> | 白子數: <span id="whiteScore">0</span>
+    </div>
+
+    <div class="controls">
+        <button onclick="newGame()">新局</button>
+        <button class="pass-btn" onclick="game.pass()">讓子 (Pass)</button>
+        <button onclick="game.undo()">悔棋</button>
+        <button id="aiBtn" onclick="toggleAI()">AI開關 (開)</button>
+    </div>
+</div>
+
+<script>
+class GoGame {
+    constructor() {
+        this.board = Array(9).fill().map(() => Array(9).fill(0));
+        this.history = [];
+        this.currentPlayer = 1; // 1:黑, -1:白
+        this.aiEnabled = true;
+        this.passCount = 0;
+        this.gameOver = false;
+        this.initDOM();
+        this.updateUI();
+    }
+
+    initDOM() {
+        // 畫格線
+        const gridLines = document.getElementById('gridLines');
+        gridLines.innerHTML = '';
+        for(let i=0; i<64; i++) gridLines.innerHTML += '<div class="grid-box"></div>';
+
+        // 畫固定星位 (天元與四角)
+        const boardCont = document.getElementById('mainBoard');
+        const hoshiPos = [2, 4, 6];
+        hoshiPos.forEach(r => {
+            hoshiPos.forEach(c => {
+                if ((r===4 && c===4) || (r!==4 && c!==4)) { // 排除 2,4 6,4 等非星位點
+                    const h = document.createElement('div');
+                    h.className = 'hoshi';
+                    h.style.top = (r * 50 + 25) + 'px';
+                    h.style.left = (c * 50 + 25) + 'px';
+                    boardCont.appendChild(h);
+                }
+            });
+        });
+
+        // 交叉點感應
+        const layer = document.getElementById('intersections');
+        layer.innerHTML = '';
+        for(let r=0; r<9; r++) {
+            for(let c=0; c<9; c++) {
+                const pt = document.createElement('div');
+                pt.className = 'point';
+                pt.onclick = () => this.handlePlay(r, c);
+                layer.appendChild(pt);
+            }
+        }
+    }
+
+    handlePlay(r, c) {
+        if (this.gameOver || (this.currentPlayer === -1 && this.aiEnabled)) return;
+        if (this.play(r, c, 1)) {
+            this.passCount = 0;
+            if (this.aiEnabled && !this.gameOver) {
+                setTimeout(() => this.aiMove(), 500);
+            }
+        }
+    }
+
+    play(r, c, player) {
+        if (this.board[r][c] !== 0) return false;
+
+        const backup = JSON.parse(JSON.stringify(this.board));
+        this.board[r][c] = player;
+        
+        let captured = false;
+        this.getNeighbors(r, c).forEach(([nr, nc]) => {
+            if (this.board[nr][nc] === -player && this.getLiberties(nr, nc).length === 0) {
+                this.removeGroup(nr, nc);
+                captured = true;
+            }
         });
 
         if (!captured && this.getLiberties(r, c).length === 0) {
